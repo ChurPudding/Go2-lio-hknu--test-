@@ -16,16 +16,22 @@
 
 | 경로 | 용량 |
 |---|---|
-| `plio_imufix2/` | 751M |
-| `plio_after_1041/` | 86M |
-| `plio_before_981/` | 82M |
-| `out_0730_1302/` | 251M |
-| `out_0730_1326/` | 746M |
+| `_deprecated/plio_imufix2/` | 751M |
+| `_deprecated/plio_after_1041/` | 86M |
+| `_deprecated/plio_before_981/` | 82M |
+| `_deprecated/out_0730_1302/` | 251M |
+| `_deprecated/out_0730_1326/` | 746M |
 
-## 용도 미상 — 확인 후 판단
+### 추가 폐기 (2026-07-31 확인)
 
-| 경로 | 용량 |
-|---|---|
-| `go2_run1/` | 120M |
-| `go2_run2/` | 240M |
-| `traj_*/` | 소량 |
+| 경로 | 용량 | 사유 |
+|---|---|---|
+| `_deprecated/go2_run1/` | 120M | 50초. 정지 구간·닫힌 루프 조건 미달 |
+| `_deprecated/go2_run2/` | 240M | 107초인데 메시지 76k (full 은 136k). 토픽 유실 |
+| `_deprecated/expA_*/` | 소량 | 실험 A(다운샘플) 판정 보류분 |
+| `_deprecated/traj_*/` | 소량 | 초기 궤적 시험 |
+| `_deprecated/*.csv` | 소량 | 폐기 규약 시절 결과 |
+
+전체 `_deprecated/` 2.4 GB. `.gitignore` 로 저장소에서 제외.
+디스크 여유 790 GB 이므로 삭제하지 않는다 — **규약 도입 전후 비교의 원자료**이며,
+다른 각도로 재분석할 여지가 있다.
