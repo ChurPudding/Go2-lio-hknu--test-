@@ -66,6 +66,8 @@ class LioHealth(Node):
         self.declare_parameter('speed_window', 3.0)       # 속도 비교 구간 [s]
         self.declare_parameter('speed_err_max', 0.40)     # 허용 속도 차 [m/s]
         self.declare_parameter('z_rate_max', 0.50)        # 허용 z 변화율 [m/s]
+        self.declare_parameter('out_topic', '/indoor/health')
+        self.declare_parameter('out_info_topic', '/indoor/health_info')
         self.declare_parameter('yaw_rate_max', 0.15)      # 이상 회전하면 정지검사 건너뜀 [rad/s]
         self.declare_parameter('auto_recover', False)
 
@@ -88,11 +90,11 @@ class LioHealth(Node):
         self.t_last_lio = None
         self.started = False
 
-        self.pub = self.create_publisher(Bool, '/lio/health', 10)
-        self.pub_info = self.create_publisher(String, '/lio/health_info', 10)
+        self.pub = self.create_publisher(Bool, g('out_topic'), 10)
+        self.pub_info = self.create_publisher(String, g('out_info_topic'), 10)
         self.create_subscription(Odometry, g('lio_topic'), self.on_lio, qos_profile_sensor_data)
         self.create_subscription(Odometry, g('ref_topic'), self.on_ref, qos_profile_sensor_data)
-        self.create_subscription(Empty, '/lio/health_reset', self.on_reset, 10)
+        self.create_subscription(Empty, g('out_topic') + '_reset', self.on_reset, 10)
         self.create_timer(0.1, self.tick)
         self.create_timer(5.0, self.report)
 
