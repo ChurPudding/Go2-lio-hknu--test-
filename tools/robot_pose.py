@@ -31,6 +31,7 @@ import numpy as np
 import rclpy
 from rclpy.node import Node
 from nav_msgs.msg import Odometry
+from std_msgs.msg import Bool
 
 # 본체(base_link) -> L1/LiDAR 회전. 자이로 Kabsch 정렬, 설명력 98.0%
 R_LB = np.array([
@@ -99,6 +100,12 @@ class RobotPose(Node):
         self.last = None
         self.pub = self.create_publisher(
             Odometry, self.get_parameter('out_topic').value, 10)
+        # 신뢰도를 covariance 로 실어 보내기 위해 health 를 구독한다
+        self.health_cov = 0.01
+        self.declare_parameter("health_topic", "/indoor/health")
+        self.create_subscription(
+            Bool, self.get_parameter("health_topic").value,
+            lambda m: setattr(self, "health_cov", 0.01 if m.data else 1e6), 10)
         self.create_subscription(
             Odometry, self.get_parameter('in_topic').value, self.on_odom, 10)
 
@@ -135,6 +142,14 @@ class RobotPose(Node):
         out.pose.pose.orientation.z = qz
         out.pose.pose.orientation.w = qw
         out.twist = m.twist
+        # 신뢰도: 정상 0.01, 이상 1e6 (표준 covariance 관례)
+        c = self.health_cov
+        out.pose.covariance = [c, 0.0, 0.0, 0.0, 0.0, 0.0,
+                               0.0, c, 0.0, 0.0, 0.0, 0.0,
+                               0.0, 0.0, c, 0.0, 0.0, 0.0,
+                               0.0, 0.0, 0.0, c, 0.0, 0.0,
+                               0.0, 0.0, 0.0, 0.0, c, 0.0,
+                               0.0, 0.0, 0.0, 0.0, 0.0, c]
         self.pub.publish(out)
 
     def report(self):
