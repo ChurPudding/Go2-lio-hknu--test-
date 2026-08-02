@@ -113,6 +113,8 @@ class ProximityGuard(Node):
         self.declare_parameter('persist', 3)           # 연속 N 프레임 걸려야 정지
         self.declare_parameter('min_points', 5)        # 잡음 제거
         self.declare_parameter('timeout', 1.0)         # 점군 끊기면 정지 [s]
+        self.declare_parameter('out_topic', '/indoor/safe')
+        self.declare_parameter('out_info_topic', '/indoor/obstacle')
 
         g = lambda n: self.get_parameter(n).value
         self.stop_d = float(g('stop_dist'))
@@ -134,16 +136,17 @@ class ProximityGuard(Node):
         self.info = {}
         self.n_in = 0
 
-        self.pub = self.create_publisher(Bool, '/indoor/safe', 10)
-        self.pub_info = self.create_publisher(String, '/indoor/obstacle', 10)
+        self.pub = self.create_publisher(Bool, g('out_topic'), 10)
+        self.pub_info = self.create_publisher(String, g('out_info_topic'), 10)
         self.create_subscription(PointCloud2, g('in_topic'),
                                  self.on_cloud, qos_profile_sensor_data)
         self.create_timer(0.1, self.tick)
         self.create_timer(5.0, self.report)
 
         self.get_logger().info(
-            'proximity_guard: %s -> /indoor/safe   정지 %.2f m, 해제 %.2f m, 부채꼴 ±%.0f°'
-            % (g('in_topic'), self.stop_d, self.clear_d, float(g('sector_deg'))))
+            'proximity_guard: %s -> %s   정지 %.2f m, 해제 %.2f m, 부채꼴 ±%.0f°'
+            % (g('in_topic'), g('out_topic'), self.stop_d, self.clear_d,
+               float(g('sector_deg'))))
 
     # ------------------------------------------------------------------
     def on_cloud(self, msg):

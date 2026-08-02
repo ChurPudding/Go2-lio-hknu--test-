@@ -30,7 +30,8 @@ MIN_BASELINE = 5.0    # m   기선 최소 길이
 MAX_SPAN = 25.0       # s   기선 최대 시간
 MAX_BOW = 1.0         # m   직선 판정: 현에서 벗어난 최대 거리
 MIN_SPEED = 0.20      # m/s 전진 최소 속도
-MAX_LATERAL = 0.10    # m/s 게걸음 허용 한도
+MAX_LATERAL = 0.10    # m/s 게걸음 허용 한도. BETA_CORRECT 시 완화된다
+BETA_MAX_LATERAL = 0.40  # m/s β 보정을 켰을 때의 게걸음 한도
 R_EARTH = 6378137.0
 
 
@@ -94,7 +95,7 @@ def wrap(a):
     return (a + np.pi) % (2 * np.pi) - np.pi
 
 
-def main(bag_path):
+def main(bag_path, beta_correct=False):
     (yt, yv, gt, lat, lon, hdop, sat, st, vx, vy, n_bad) = read_bag(bag_path)
     t0 = min(yt[0], gt[0], st[0])
     yt, gt, st = yt - t0, gt - t0, st - t0
@@ -153,17 +154,23 @@ def main(bag_path):
         if mvx < MIN_SPEED:
             reject["저속"] += 1
             continue
-        if mvy > MAX_LATERAL:
+        lat_limit = BETA_MAX_LATERAL if beta_correct else MAX_LATERAL
+        if mvy > lat_limit:
             reject["게걸음"] += 1
             continue
 
+        # 측면미끄러짐각 — 몸통이 가리키는 방향과 실제 이동 방향의 차이
+        beta = np.arctan2(vy[sel].mean(), vx[sel].mean())
+
         tm = 0.5 * (gt[i] + gt[j])
         course = np.arctan2(dN, dE)            # ENU: 동쪽 기준 반시계
+        if beta_correct:
+            course = course - beta             # 이동 방향 -> 몸통 방향
         yaw = np.interp(tm, yt, yaw_u)
         cum = np.interp(tm, yt, netrot)
         rows.append((tm, np.degrees(course), np.degrees(wrap(yaw)),
                      np.degrees(wrap(yaw - course)), L, mvx,
-                     np.degrees(cum)))
+                     np.degrees(cum), np.degrees(beta)))
 
     print(f"기선 채택 {len(rows)}개  " +
           "  ".join(f"{k} {v}" for k, v in reject.items()))
@@ -254,12 +261,26 @@ def main(bag_path):
         else:
             print("→ 직선에서도 벌어진다. 시간 표류 성분이 있다.")
 
+    print(f"\n── β (측면미끄러짐각) ──")
+    bt = a[:, 7]
+    print(f"평균 {bt.mean():+.2f}°   표준편차 {bt.std():.2f}°"
+          f"   범위 {bt.min():+.2f} ~ {bt.max():+.2f}°")
+    se = bt.std() / np.sqrt(len(bt))
+    if abs(bt.mean()) > 2 * se:
+        print(f"→ 평균이 0 과 유의하게 다르다 (표준오차 {se:.2f}°)."
+              " 계통 편향이 존재한다.")
+    else:
+        print(f"→ 평균이 0 과 구분되지 않는다 (표준오차 {se:.2f}°). 잡음에 가깝다.")
+    print(f"보정 적용: {'예' if beta_correct else '아니오'}"
+          f"   (게걸음 한도 {BETA_MAX_LATERAL if beta_correct else MAX_LATERAL} m/s)")
+
     np.savetxt("results/yaw_gps_diff.csv", a, delimiter=",",
-               header="t,course_deg,yaw_deg,diff_deg,baseline_m,vx,netrot_deg",
+               header="t,course_deg,yaw_deg,diff_deg,baseline_m,vx,netrot_deg,beta_deg",
                comments="")
     print("\nresults/yaw_gps_diff.csv 저장")
 
 
 if __name__ == "__main__":
-    main(sys.argv[1] if len(sys.argv) > 1 else
-         "/home/hyo/fastlio_ws/go2_outdoor_0731_1114")
+    args = [x for x in sys.argv[1:] if not x.startswith("--")]
+    main(args[0] if args else "/home/hyo/fastlio_ws/go2_outdoor_0731_1114",
+         beta_correct="--beta" in sys.argv)
