@@ -154,6 +154,7 @@ fi
 # ═══════════════════════════════════════════════ 6 로봇
 if [[ $MODE == robot ]]; then
   sec "6. 로봇 연결"
+  RFAIL0=$FAIL
   if ip -br addr 2>/dev/null | grep -q 192.168.123; then
     IF=$(ip -br addr | grep 192.168.123 | awk '{print $1}')
     g "인터페이스 $IF"
@@ -189,8 +190,16 @@ printf '\n\033[1m── 결과 ────────────────�
 printf '  통과 %d   경고 %d   실패 %d\n\n' "$PASS" "$WARN" "$FAIL"
 
 if [[ $FAIL -gt 0 ]]; then
-  echo "  실패 항목을 먼저 해결하십시오. 대부분은 아래로 고쳐집니다."
-  echo "      $WS/tools/install_go2_lio.sh"
+  RFAIL=$(( FAIL - ${RFAIL0:-$FAIL} ))
+  if [[ $RFAIL -eq $FAIL ]]; then
+    echo "  설치는 정상입니다. 로봇 연결만 확인하십시오."
+    echo "      · USB-이더넷 케이블이 꽂혀 있는지"
+    echo "      · 로봇 전원이 켜져 있고 부팅이 끝났는지"
+    echo "      · source ~/setup_go2.sh 후 ros2 topic list"
+  else
+    echo "  실패 항목을 먼저 해결하십시오. 대부분은 아래로 고쳐집니다."
+    echo "      $WS/tools/install_go2_lio.sh"
+  fi
   exit 1
 elif [[ $WARN -gt 0 ]]; then
   echo "  쓸 수 있습니다. 경고는 기능에 따라 필요할 수 있습니다."
