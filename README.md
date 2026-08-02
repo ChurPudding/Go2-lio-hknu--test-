@@ -114,6 +114,15 @@ tar xzf go2_handover.tar.gz -C ~        # 또는 git clone
 ~/fastlio_ws/tools/install_go2_lio.sh
 ```
 
+설치가 끝나면 점검하십시오.
+
+```bash
+~/fastlio_ws/tools/doctor.sh          # 파일·설정 확인
+~/fastlio_ws/tools/doctor.sh robot    # 로봇 연결까지
+```
+
+**실패 0** 이면 바로 쓰실 수 있습니다.
+
 6단계를 자동으로 진행합니다. **30분~1시간** 걸리며 `sudo` 비밀번호를 두 번 묻습니다.
 
 ```bash
