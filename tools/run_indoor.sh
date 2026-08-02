@@ -70,13 +70,14 @@ cleanup() {
   for ((i=${#PIDS[@]}-1; i>=0; i--)); do
     kill -INT "${PIDS[$i]}" 2>/dev/null && echo "   ${NAMES[$i]}"
   done
-  for i in {1..24}; do
+  for i in {1..80}; do
     alive=0
     for p in "${PIDS[@]:-}"; do kill -0 "$p" 2>/dev/null && alive=1; done
     [[ $alive == 0 ]] && break
     sleep 0.5
   done
   for p in "${PIDS[@]:-}"; do kill -9 "$p" 2>/dev/null; done
+  sleep 2
   local pcd=~/catkin_point_lio_unilidar/src/point_lio_ros2/PCD/scans.pcd
   [[ -f $pcd ]] && echo "   지도 저장됨: $pcd ($(du -h "$pcd" | cut -f1))"
   echo "─────────────────────────────────────────────────────────"
@@ -158,7 +159,9 @@ cat <<EOF
   /cloud_registered    실시간 정합 점군        (팀원B)
 
   상태 : tail -f /tmp/go2_indoor/health.log
-  지도 : Ctrl+C 로 종료하면 PCD 저장 (강제 종료 금지)
+  주의 : 이 스크립트로는 PCD 가 저장되지 않습니다(백그라운드 종료).
+         지도를 만들 때는 T1 브리지 + T2 launch + T3 재생을 수동으로 띄우고
+         T2 에서 Ctrl+C 를 눌러 정상 종료시킬 것
 
 EOF
 
