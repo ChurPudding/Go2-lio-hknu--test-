@@ -77,6 +77,9 @@ cleanup() {
     sleep 0.5
   done
   for p in "${PIDS[@]:-}"; do kill -9 "$p" 2>/dev/null; done
+  # launch 가 띄운 rviz2 는 SIGINT 를 받고도 남는다. 설정 파일 이름으로
+  # 특정해 닫는다(다른 rviz 세션은 건드리지 않는다).
+  pkill -f 'rviz2.*loam_livox' 2>/dev/null && echo "   rviz2"
   sleep 2
   local pcd=~/catkin_point_lio_unilidar/src/point_lio_ros2/PCD/scans.pcd
   [[ -f $pcd ]] && echo "   지도 저장됨: $pcd ($(du -h "$pcd" | cut -f1))"
