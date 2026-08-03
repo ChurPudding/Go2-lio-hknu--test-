@@ -112,7 +112,9 @@ if [[ $MODE == bag ]]; then
   unset CYCLONEDDS_URI          # 오프라인 재생: 로봇과 분리 (실기 오작동 방지)
   echo "모드: bag 재생  $(basename "$BAG")  -r $RATE"
 else
-  source ~/setup_go2.sh || { echo "✗ setup_go2.sh 실패 — 로봇 연결 확인"; exit 1; }
+  set +u   # ROS setup 파일들은 미정의 변수를 쓰므로 잠시 꺼야 한다
+  source ~/setup_go2.sh || { set -u; echo "✗ setup_go2.sh 실패 — 로봇 연결 확인"; exit 1; }
+  set -u
   echo "모드: 실시간"
   echo
   echo "── 입력 토픽 확인 ───────────────────────────────────────"
@@ -146,6 +148,15 @@ start "lio_health" /tmp/go2_indoor/health.log \
       python3 "$WS/tools/lio_health.py" --ros-args \
       -p lio_topic:=$NS/base_pose -p out_topic:=$NS/health \
       -p out_info_topic:=$NS/health_info
+# 지도를 토픽으로도 낸다. 파일이 없으면 건너뛴다(주행 자체는 지도 없이도 된다).
+MAPYAML=${GO2_MAP:-$WS/results/indoor_map_inflated.yaml}
+if [[ -f $MAPYAML ]]; then
+  start "지도 발행"  /tmp/go2_indoor/map.log \
+        python3 "$WS/tools/map_publisher.py" --ros-args \
+        -p yaml:="$MAPYAML" -p topic:=$NS/map -p frame_id:=$MAP_FRAME
+else
+  printf '  %-14s %s\n' "지도 발행" "건너뜀 (지도 파일 없음)"
+fi
 start "lio_tf"     /tmp/go2_indoor/tf.log \
       python3 "$WS/tools/lio_tf.py" --ros-args \
       -p in_topic:=$NS/base_pose -p health_topic:=$NS/health \

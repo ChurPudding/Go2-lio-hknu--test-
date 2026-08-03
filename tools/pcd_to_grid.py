@@ -29,7 +29,7 @@ matplotlib.use('Agg')
 import matplotlib.pyplot as plt
 
 # 로봇이 통과 가능한 높이대 [m] — 이 범위의 점만 장애물로 본다
-Z_MIN, Z_MAX = 0.40, 1.60
+Z_MIN, Z_MAX = 0.20, 1.50
 # 한 칸에 이만큼 이상 점이 있어야 장애물로 친다 (잡음 제거)
 MIN_PTS = 2
 

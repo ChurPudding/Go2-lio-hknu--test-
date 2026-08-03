@@ -158,8 +158,11 @@ if [[ $MODE == robot ]]; then
   if ip -br addr 2>/dev/null | grep -q 192.168.123; then
     IF=$(ip -br addr | grep 192.168.123 | awk '{print $1}')
     g "인터페이스 $IF"
-    [[ $IF == enx* || $IF == enp0s20* ]] && g "USB-이더넷" \
-      || y "내장 랜포트로 보입니다" "연결이 끊긴 사례가 있습니다. USB-이더넷 권장"
+    case $IF in
+      enx*|enp0s20*) g "USB-이더넷" ;;
+      wl*)           y "WiFi 연결" "/lowstate 가 밀릴 수 있습니다. 정밀 실험은 USB-이더넷 권장" ;;
+      *)             y "내장 랜포트로 보입니다" "연결이 끊긴 사례가 있습니다. USB-이더넷 권장" ;;
+    esac
   else
     r "192.168.123.x 인터페이스 없음" "로봇 케이블을 확인하십시오"
   fi
