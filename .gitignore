@@ -28,3 +28,4 @@ _deprecated/
 go2_corridor*/
 *.bak_*
 docs/QUESTIONS.md
+!docs/**/*.png
