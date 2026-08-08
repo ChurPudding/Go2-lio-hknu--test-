@@ -37,3 +37,4 @@ results/*.yaml
 results/odommap*/
 results/repro/
 !results/final/*
+.vscode/
