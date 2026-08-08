@@ -96,7 +96,8 @@ def main():
               % (edges[i], edges[i + 1], hist[i], '#' * int(50 * hist[i] / mx)))
 
     # --- 지면 기준 잡기: 최빈 높이를 지면으로 --------------------------
-    ground = edges[np.argmax(hist)]
+    k = int(np.argmax(hist))
+    ground = (edges[k] + edges[k + 1]) / 2   # bin 왼쪽 끝이 아니라 중앙
     print()
     print('추정 지면 높이 %.2f m  -> 장애물 높이대 %.2f ~ %.2f m'
           % (ground, ground + Z_MIN, ground + Z_MAX))

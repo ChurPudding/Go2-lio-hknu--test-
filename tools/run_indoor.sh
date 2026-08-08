@@ -142,12 +142,18 @@ sleep 4
 start "map 프레임" /tmp/go2_indoor/staticframe.log \
       ros2 run tf2_ros static_transform_publisher \
       0 0 0 0 0 0 "$MAP_FRAME" camera_init
+# odom 별칭. RViz 나 Nav2 가 Fixed Frame 을 odom 으로 쓰는 경우를 위한 것.
+# indoor_map 과 같은 원점이므로 항등 변환이다.
+start "odom 별칭"  /tmp/go2_indoor/odomalias.log \
+      ros2 run tf2_ros static_transform_publisher \
+      0 0 0 0 0 0 odom "$MAP_FRAME"
 start "robot_pose" /tmp/go2_indoor/pose.log \
       python3 "$WS/tools/robot_pose.py" --ros-args -p out_topic:=$NS/base_pose
 start "lio_health" /tmp/go2_indoor/health.log \
       python3 "$WS/tools/lio_health.py" --ros-args \
       -p lio_topic:=$NS/base_pose -p out_topic:=$NS/health \
-      -p out_info_topic:=$NS/health_info
+      -p out_info_topic:=$NS/health_info \
+      -p auto_recover:=True
 # 지도를 토픽으로도 낸다. 파일이 없으면 건너뛴다(주행 자체는 지도 없이도 된다).
 MAPYAML=${GO2_MAP:-$WS/results/indoor_map_inflated.yaml}
 if [[ -f $MAPYAML ]]; then

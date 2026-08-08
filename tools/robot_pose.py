@@ -34,18 +34,15 @@ from nav_msgs.msg import Odometry
 from std_msgs.msg import Bool
 
 # 본체(base_link) -> L1/LiDAR 회전. 자이로 Kabsch 정렬, 설명력 98.0%
-R_LB = np.array([
-    [+0.523029, -0.838576, +0.152420],
-    [-0.810712, -0.544668, -0.214668],
-    [+0.263034, -0.011292, -0.964721],
-])
+import sys as _sys, os as _os
+_sys.path.insert(0, _os.path.dirname(_os.path.abspath(__file__)))
+from go2_calib import R_LB, LEVER   # 상수는 한 곳에서만 관리한다
 
 # base_link 원점 -> LiDAR 원점, base_link 프레임 표현 [m]
 #   x,y : 창 분할 최소자승으로 추정 (잔차 0.238 -> 0.143 m, 40% 개선)
 #   z   : 이 데이터로는 관측 불가(몸통 roll/pitch 변화 부족).
 #         지면까지 거리 0.355~0.364 m 와 몸통 높이 0.308 m 로부터 추정한 근사값.
 #         정밀도가 필요하면 실측할 것.
-LEVER = np.array([0.322, 0.005, 0.050])
 
 FWD_L = R_LB @ np.array([1.0, 0.0, 0.0])   # 로봇 정면을 LiDAR 프레임으로
 

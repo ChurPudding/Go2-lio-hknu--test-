@@ -68,6 +68,7 @@ class LioHealth(Node):
         self.declare_parameter('z_rate_max', 0.50)        # 허용 z 변화율 [m/s]
         self.declare_parameter('out_topic', '/indoor/health')
         self.declare_parameter('out_info_topic', '/indoor/health_info')
+        self.declare_parameter('persist', 3)     # 연속 N 회 걸려야 NG
         self.declare_parameter('yaw_rate_max', 0.15)      # 이상 회전하면 정지검사 건너뜀 [rad/s]
         self.declare_parameter('auto_recover', False)
 
@@ -79,6 +80,8 @@ class LioHealth(Node):
         self.speed_window = float(g('speed_window'))
         self.speed_err_max = float(g('speed_err_max'))
         self.z_rate_max = float(g('z_rate_max'))
+        self.persist = int(g('persist'))
+        self.hits = 0
         self.yaw_rate_max = float(g('yaw_rate_max'))
         self.auto_recover = bool(g('auto_recover'))
 
@@ -194,6 +197,10 @@ class LioHealth(Node):
     def tick(self):
         ok, why = self.check()
 
+        # 연속 persist 회 걸려야 NG. 단발 잡음(로봇 자세 조정, 지나가는 사람)을 거른다.
+        self.hits = self.hits + 1 if not ok else 0
+        if not ok and self.hits < self.persist:
+            ok = True
         if not ok and not self.latched:
             self.latched = True
             self.healthy = False
