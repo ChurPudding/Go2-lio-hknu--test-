@@ -1,0 +1,6 @@
+image: grid.pgm
+resolution: 0.1500
+origin: [-38.3379, -21.9444, 0.0]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196

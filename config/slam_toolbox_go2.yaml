@@ -1,0 +1,78 @@
+# slam_toolbox_go2.yaml -- Go2 + L1 용 설정
+#
+# 왜 이걸 쓰는가
+#   Point-LIO 는 오도메트리라서 "여기 와봤다"를 모른다. 지나간 길을 다시 지나면
+#   조금씩 쌓인 오차만큼 벽이 두 겹으로 찍힌다(실측: 2cm 격자에서 벽 두께가
+#   90 백분위 0.20 m, 95 백분위 0.30 m. 실제 벽은 0.10~0.20 m).
+#
+#   slam_toolbox 는 루프 클로저를 한다. 예전에 본 장면과 지금 장면을 대조해
+#   같은 곳이면 전체 궤적을 다시 최적화하므로 두 겹이 하나로 합쳐진다.
+#
+# 입력
+#   /scan   pointcloud_to_laserscan 이 /utlidar/cloud 를 눌러 만든 2D 스캔
+#   TF      odom -> base_link  (lio_tf 가 발행. Point-LIO 가 근원)
+# 출력
+#   /map    nav_msgs/OccupancyGrid  (루프 클로저 반영됨)
+#   TF      map -> odom             (표류 보정량)
+
+slam_toolbox:
+  ros__parameters:
+
+    # ── 프레임 ──────────────────────────────────────────────────────
+    # slam_toolbox 는 map -> odom 을 발행한다. odom -> base_link 는 우리가
+    # 이미 lio_tf 로 내고 있으므로 그대로 이어붙는다.
+    odom_frame: odom
+    map_frame: map
+    base_frame: base_link
+    scan_topic: /scan
+    use_map_saver: true
+    mode: mapping
+
+    # ── 성능 ────────────────────────────────────────────────────────
+    debug_logging: false
+    throttle_scans: 1
+    transform_publish_period: 0.02
+    map_update_interval: 1.0            # 지도 갱신 주기 [s]
+    resolution: 0.05                    # 격자 한 칸 [m]
+    max_laser_range: 12.0               # L1 실내 유효 사거리
+    minimum_time_interval: 0.2
+    transform_timeout: 0.2
+    tf_buffer_duration: 30.0
+    stack_size_to_use: 40000000
+    enable_interactive_mode: true
+
+    # ── 스캔 매칭 ───────────────────────────────────────────────────
+    use_scan_matching: true
+    use_scan_barycenter: true
+    minimum_travel_distance: 0.3        # 이만큼 움직여야 새 노드
+    minimum_travel_heading: 0.3         # 또는 이만큼 회전 [rad]
+    scan_buffer_size: 20
+    scan_buffer_maximum_scan_distance: 12.0
+    link_match_minimum_response_fine: 0.1
+    link_scan_maximum_distance: 1.5
+
+    # ── 루프 클로저 — 이 문제를 풀려고 쓰는 것 ──────────────────────
+    do_loop_closing: true
+    loop_search_maximum_distance: 4.0   # 이 반경 안의 과거 노드를 후보로
+    loop_match_minimum_chain_size: 8    # 연속 노드 8개 이상이어야 인정
+    loop_match_maximum_variance_coarse: 3.0
+    loop_match_minimum_response_coarse: 0.35
+    loop_match_minimum_response_fine: 0.45
+
+    # ── 상관 기반 매칭 파라미터 ─────────────────────────────────────
+    correlation_search_space_dimension: 0.5
+    correlation_search_space_resolution: 0.01
+    correlation_search_space_smear_deviation: 0.1
+
+    loop_search_space_dimension: 8.0
+    loop_search_space_resolution: 0.05
+    loop_search_space_smear_deviation: 0.03
+
+    distance_variance_penalty: 0.5
+    angle_variance_penalty: 1.0
+    fine_search_angle_offset: 0.00349
+    coarse_search_angle_offset: 0.349
+    coarse_angle_resolution: 0.0349
+    minimum_angle_penalty: 0.9
+    minimum_distance_penalty: 0.5
+    use_response_expansion: true

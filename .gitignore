@@ -29,3 +29,11 @@ go2_corridor*/
 *.bak_*
 docs/QUESTIONS.md
 !docs/**/*.png
+
+# 지도 산출물 — bag 에서 재생성 가능
+results/*.npy
+results/*.pgm
+results/*.yaml
+results/odommap*/
+results/repro/
+!results/final/*
