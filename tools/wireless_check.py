@@ -10,7 +10,7 @@
 
 사용법
 ------
-    python3 wireless_check.py ~/fastlio_ws/go2_outdoor_all_0731_1128
+    python3 wireless_check.py ~/data/bags/outdoor/go2_outdoor_all_0731_1128
 """
 import sys
 
@@ -220,4 +220,4 @@ def main(path):
 
 if __name__ == "__main__":
     main(sys.argv[1] if len(sys.argv) > 1 else
-         "/home/hyo/fastlio_ws/go2_outdoor_all_0731_1128")
+         "/home/hyo/data/bags/outdoor/go2_outdoor_all_0731_1128")

@@ -90,7 +90,7 @@ ros2 launch point_lio mapping_unilidar_l1.launch.py
 ~/fastlio_ws/tools/rec_rviz.sh divergence_raw 20
 
 # [T3] 재생
-cd ~/fastlio_ws && ros2 bag play go2_run_full
+cd ~/fastlio_ws && ros2 bag play ~/data/bags/indoor/go2_run_full
 ```
 
 끝나면 yaml을 되돌린다.
@@ -114,7 +114,7 @@ ros2 launch point_lio mapping_unilidar_l1.launch.py
 ~/fastlio_ws/tools/rec_rviz.sh fixed_full 125
 
 # [T4] 재생
-cd ~/fastlio_ws && ros2 bag play go2_run_full
+cd ~/fastlio_ws && ros2 bag play ~/data/bags/indoor/go2_run_full
 ```
 
 ---

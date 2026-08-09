@@ -87,7 +87,7 @@ def open_reader(bag):
 
 
 def main():
-    bag = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser('~/bags/floor_0805_1720')
+    bag = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser('~/data/bags/indoor/floor_0805_1720')
     voxel = float(sys.argv[2]) if len(sys.argv) > 2 else 0.05
     outdir = os.path.expanduser('~/fastlio_ws/results/odommap_corrected')
     os.makedirs(outdir, exist_ok=True)

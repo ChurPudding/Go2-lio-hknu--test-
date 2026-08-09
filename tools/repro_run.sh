@@ -14,7 +14,7 @@ set +u
 RUN_NAME="${1:?사용법: ./repro_run.sh <실행이름> [간격초]}"
 GAP="${2:-3}"
 
-BAG="$HOME/bags/floor_0805_1720"
+BAG="$HOME/data/bags/indoor/floor_0805_1720"
 PCD_SRC="$HOME/catkin_point_lio_unilidar/src/point_lio_ros2/PCD/scans.pcd"
 BRIDGE="$HOME/fastlio_ws/tools/l1_imu_fix.py"
 MONITOR="$HOME/fastlio_ws/tools/repro_monitor.py"

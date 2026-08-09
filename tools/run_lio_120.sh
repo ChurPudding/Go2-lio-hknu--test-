@@ -12,8 +12,8 @@
 #     재생속도 : 기본 0.5
 #
 # 예)
-#   ./run_lio.sh flnf go2_corridor_0731_1930 cor_flnf_run1
-#   for i in 1 2 3; do ./run_lio.sh pl go2_corridor_all_0731_1931 corall_pl_run$i; done
+#   ./run_lio.sh flnf ~/data/bags/indoor/go2_corridor_0731_1930 cor_flnf_run1
+#   for i in 1 2 3; do ./run_lio.sh pl ~/data/bags/indoor/go2_corridor_all_0731_1931 corall_pl_run$i; done
 #
 # 하는 일
 #   1. 환경을 알고리즘에 맞게 source (srcoff/srcfl 대신 직접)

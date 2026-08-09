@@ -23,13 +23,13 @@ loop_correct_v2.py — 증분 재적분 방식 루프 클로저
 
   사용 예:
     # 출발점에 정확히, 같은 방향으로 복귀 (0805)
-    python3 loop_correct_v2.py ~/bags/floor_0805_1720
+    python3 loop_correct_v2.py ~/data/bags/indoor/floor_0805_1720
 
     # 반대 방향으로 끝남 (0807)
-    python3 loop_correct_v2.py ~/bags/floor_0807_1542 --end-dyaw 180
+    python3 loop_correct_v2.py ~/data/bags/indoor/floor_0807_1542 --end-dyaw 180
 
     # 궤적만 확인
-    python3 loop_correct_v2.py ~/bags/floor_0805_1720 --plot-only
+    python3 loop_correct_v2.py ~/data/bags/indoor/floor_0805_1720 --plot-only
 """
 
 import argparse
@@ -119,7 +119,7 @@ def deform(P, TH, s, target_p, target_th):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('bag', nargs='?',
-                    default=os.path.expanduser('~/bags/floor_0805_1720'))
+                    default=os.path.expanduser('~/data/bags/indoor/floor_0805_1720'))
     ap.add_argument('--voxel', type=float, default=0.05)
     ap.add_argument('--end-dx', type=float, default=0.0)
     ap.add_argument('--end-dy', type=float, default=0.0)

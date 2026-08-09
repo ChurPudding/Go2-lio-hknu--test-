@@ -42,7 +42,7 @@ def detect_storage(bag_dir):
 
 def main():
     bag = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser(
-        '~/bags/floor_0805_1720')
+        '~/data/bags/indoor/floor_0805_1720')
     topic = sys.argv[2] if len(sys.argv) > 2 else '/utlidar/cloud'
 
     from rosbag2_py import SequentialReader, StorageOptions, ConverterOptions

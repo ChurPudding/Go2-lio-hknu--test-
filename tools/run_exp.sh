@@ -21,7 +21,7 @@ N=${2:-3}
 RATE=${3:-1.0}
 
 WS=~/fastlio_ws
-BAG=$WS/go2_run_full
+BAG=~/data/bags/indoor/go2_run_full
 TOOLS=$WS/tools
 OUT=$WS/exp
 TOPIC=/aft_mapped_to_init

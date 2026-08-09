@@ -177,7 +177,7 @@ ros2 bag record -o ~/fastlio_ws/out_<실험이름> /aft_mapped_to_init
 
 ```bash
 # [T4] 재생 — 마지막에 시작
-cd ~/fastlio_ws && ros2 bag play go2_run_full -r 0.5
+cd ~/fastlio_ws && ros2 bag play ~/data/bags/indoor/go2_run_full -r 0.5
 ```
 
 **종료 순서: T4 → T3 → T2 → T1.** 녹화를 먼저 닫아야 bag이 온전히 마감된다.
@@ -198,7 +198,7 @@ ros2 bag info ~/fastlio_ws/out_<실험이름>
 
 | 상황 | 옵션 |
 |---|---|
-| PC가 못 따라감 (메시지 드롭) | `ros2 bag play go2_run_full -r 0.5` |
+| PC가 못 따라감 (메시지 드롭) | `ros2 bag play ~/data/bags/indoor/go2_run_full -r 0.5` |
 | 특정 구간만 보기 | `--start-offset 15 --playback-duration 10` |
 | 반복 | `--loop` (초기화 문제로 진단에는 부적합) |
 
@@ -268,7 +268,7 @@ python3 ~/fastlio_ws/dump_odom.py <db3> <csv> /Odometry
 
 ```bash
 python3 ~/fastlio_ws/tools/eval_lio.py \
-  ~/fastlio_ws/go2_run_full/go2_run_full_0.db3 \
+  ~/data/bags/indoor/go2_run_full/go2_run_full_0.db3 \
   ~/fastlio_ws/expA.csv \
   ~/fastlio_ws/expB.csv
 ```

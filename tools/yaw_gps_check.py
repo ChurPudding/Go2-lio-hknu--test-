@@ -14,7 +14,7 @@ MIN_BASELINE 이상 벌어진 점끼리만 짝짓고, 직선·전진 구간만 �
 ------
     source /opt/ros/humble/setup.bash
     source ~/unitree_ros2/cyclonedds_ws/install/setup.bash
-    python3 yaw_gps_check.py ~/fastlio_ws/go2_outdoor_0731_1114
+    python3 yaw_gps_check.py ~/data/bags/outdoor/go2_outdoor_0731_1114
 """
 import json
 import sys
@@ -282,5 +282,5 @@ def main(bag_path, beta_correct=False):
 
 if __name__ == "__main__":
     args = [x for x in sys.argv[1:] if not x.startswith("--")]
-    main(args[0] if args else "/home/hyo/fastlio_ws/go2_outdoor_0731_1114",
+    main(args[0] if args else "/home/hyo/data/bags/outdoor/go2_outdoor_0731_1114",
          beta_correct="--beta" in sys.argv)

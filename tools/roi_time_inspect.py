@@ -90,7 +90,7 @@ def deform(P, TH, s, target_p, target_th):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('bag', nargs='?',
-                    default=os.path.expanduser('~/bags/floor_0805_1720'))
+                    default=os.path.expanduser('~/data/bags/indoor/floor_0805_1720'))
     ap.add_argument('--xmin', type=float, default=9.0)
     ap.add_argument('--xmax', type=float, default=15.0)
     ap.add_argument('--ymin', type=float, default=-8.0)

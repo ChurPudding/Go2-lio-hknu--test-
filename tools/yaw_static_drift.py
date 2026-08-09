@@ -9,7 +9,7 @@
 
 사용법
 ------
-    python3 yaw_static_drift.py ~/fastlio_ws/go2_outdoor_0731_1114
+    python3 yaw_static_drift.py ~/data/bags/outdoor/go2_outdoor_0731_1114
 """
 import sys
 
@@ -122,4 +122,4 @@ def main(path):
 
 if __name__ == "__main__":
     main(sys.argv[1] if len(sys.argv) > 1 else
-         "/home/hyo/fastlio_ws/go2_outdoor_0731_1114")
+         "/home/hyo/data/bags/outdoor/go2_outdoor_0731_1114")

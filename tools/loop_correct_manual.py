@@ -18,14 +18,14 @@ loop_correct_manual.py — 실측 사실을 제약으로 넣어 보정한다
 
   사용 예:
     # 출발점에 정확히, 반대 방향으로 끝남
-    python3 loop_correct_manual.py ~/bags/floor_0807_1542 --end-dyaw 180
+    python3 loop_correct_manual.py ~/data/bags/indoor/floor_0807_1542 --end-dyaw 180
 
     # 출발점에서 앞으로 1 m 지점, 반대 방향
-    python3 loop_correct_manual.py ~/bags/floor_0807_1542 \
+    python3 loop_correct_manual.py ~/data/bags/indoor/floor_0807_1542 \
         --end-dx 1.0 --end-dyaw 180
 
     # 궤적만 그려보고 끝내기 (지도 생성 안 함)
-    python3 loop_correct_manual.py ~/bags/floor_0807_1542 --plot-only
+    python3 loop_correct_manual.py ~/data/bags/indoor/floor_0807_1542 --plot-only
 """
 
 import argparse
@@ -109,7 +109,7 @@ def open_reader(bag):
 def main():
     ap = argparse.ArgumentParser()
     ap.add_argument('bag', nargs='?',
-                    default=os.path.expanduser('~/bags/floor_0807_1542'))
+                    default=os.path.expanduser('~/data/bags/indoor/floor_0807_1542'))
     ap.add_argument('--voxel', type=float, default=0.05)
     ap.add_argument('--end-dx', type=float, default=0.0,
                     help='실제 끝 위치 (시작 자세 기준 전방, m)')

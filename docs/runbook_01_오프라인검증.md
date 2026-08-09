@@ -91,7 +91,7 @@ ros2 bag record -o ~/fastlio_ws/expA_downsample /aft_mapped_to_init
 
 ```bash
 # [T4] 재생 — 마지막에 시작
-cd ~/fastlio_ws && ros2 bag play go2_run_full
+cd ~/fastlio_ws && ros2 bag play ~/data/bags/indoor/go2_run_full
 ```
 
 재생 완료 후 종료 순서: **T4 → T3 → T2 → T1**

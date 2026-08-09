@@ -10,7 +10,7 @@ odom_map_build.py — 다리 오도메트리 자세로 점군을 누적해 지�
   bag 재생 없이 오프라인으로 직접 읽는다.
 
   사용: python3 odom_map_build.py [bag] [voxel] [출력]
-  예:   python3 odom_map_build.py ~/bags/floor_0805_1720 0.05
+  예:   python3 odom_map_build.py ~/data/bags/indoor/floor_0805_1720 0.05
 """
 
 import os
@@ -36,7 +36,7 @@ def detect_storage(bag_dir):
 
 
 def main():
-    bag = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser('~/bags/floor_0805_1720')
+    bag = sys.argv[1] if len(sys.argv) > 1 else os.path.expanduser('~/data/bags/indoor/floor_0805_1720')
     voxel = float(sys.argv[2]) if len(sys.argv) > 2 else 0.05
     out = (sys.argv[3] if len(sys.argv) > 3
            else os.path.expanduser('~/fastlio_ws/results/odommap/scans.pcd'))

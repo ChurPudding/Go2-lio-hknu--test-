@@ -83,7 +83,7 @@ def run(bag_path, **kw):
     return est, np.array(track), t0, (n_low, n_sp, n_gps)
 
 
-def main(bag_path="/home/hyo/fastlio_ws/go2_outdoor_0731_1114",
+def main(bag_path="/home/hyo/data/bags/outdoor/go2_outdoor_0731_1114",
          truth_csv=None, **kw):
     if truth_csv is None:
         # bag 이름별로 정답 파일을 나눈다. 섞이면 오프셋 차이가 오차로 보인다.
@@ -175,4 +175,4 @@ if __name__ == "__main__":
     if "--nobeta" in sys.argv:
         kw["beta_correct"] = False
     main(args[0] if args else
-         "/home/hyo/fastlio_ws/go2_outdoor_0731_1114", **kw)
+         "/home/hyo/data/bags/outdoor/go2_outdoor_0731_1114", **kw)

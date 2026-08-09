@@ -4,7 +4,7 @@
 사용법:
     source /opt/ros/humble/setup.bash
     source ~/unitree_ros2/cyclonedds_ws/install/setup.bash   # unitree_go 메시지
-    python3 yaw_spin_check.py ~/fastlio_ws/go2_outdoor_0731_1119
+    python3 yaw_spin_check.py ~/data/bags/outdoor/go2_outdoor_0731_1119
 """
 import sys
 import numpy as np
@@ -103,4 +103,4 @@ def main(bag_path):
 
 if __name__ == "__main__":
     main(sys.argv[1] if len(sys.argv) > 1 else
-         "/home/hyo/fastlio_ws/go2_outdoor_0731_1119")
+         "/home/hyo/data/bags/outdoor/go2_outdoor_0731_1119")
