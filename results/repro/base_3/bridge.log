@@ -1,0 +1,221 @@
+[INFO] [1786078945.072496377] [l1_imu_fix]: l1_imu_fix started -> /l1_imu_fixed (RELIABLE, depth=200)
+[INFO] [1786078945.072789830] [l1_imu_fix]: R_LB[0,0] = +0.523029   (기대값 +0.523029)
+[INFO] [1786078945.072976300] [l1_imu_fix]: acc_scale = 1.03613
+[INFO] [1786078945.073165492] [l1_imu_fix]: 정지 시 기대 가속도 = (+1.66, -1.90, -9.48)
+[INFO] [1786078950.060810275] [l1_imu_fix]: imu_in=0 lowstate_in=0 published=0
+[WARN] [1786078950.061149015] [l1_imu_fix]: /lowstate 미수신 -> 발행 0. bag 재생이 시작됐는지 확인할 것.
+[INFO] [1786078955.060661070] [l1_imu_fix]: imu_in=450 lowstate_in=895 published=450
+[INFO] [1786078958.865444104] [l1_imu_fix]: [정지검증] 실측 평균 = (+1.41, -1.75, -9.58)
+[INFO] [1786078958.865697506] [l1_imu_fix]: [정지검증] 기대값   = (+1.66, -1.90, -9.48)
+[INFO] [1786078958.865887036] [l1_imu_fix]: [정지검증] 차이     = (-0.25, +0.15, -0.10)
+[INFO] [1786078958.866145163] [l1_imu_fix]: [정지검증] 통과. 진행해도 좋다.
+[INFO] [1786078960.060929295] [l1_imu_fix]: imu_in=842 lowstate_in=1451 published=842
+[INFO] [1786078965.060770285] [l1_imu_fix]: imu_in=1334 lowstate_in=2153 published=1334
+[INFO] [1786078970.060669403] [l1_imu_fix]: imu_in=1959 lowstate_in=3404 published=1959
+[INFO] [1786078975.060660891] [l1_imu_fix]: imu_in=2583 lowstate_in=4654 published=2583
+[INFO] [1786078980.060790776] [l1_imu_fix]: imu_in=3206 lowstate_in=5903 published=3206
+[INFO] [1786078985.060691042] [l1_imu_fix]: imu_in=3831 lowstate_in=7152 published=3831
+[INFO] [1786078990.060715653] [l1_imu_fix]: imu_in=4221 lowstate_in=7689 published=4221
+[INFO] [1786078995.060643511] [l1_imu_fix]: imu_in=4807 lowstate_in=8704 published=4807
+[INFO] [1786079000.060637000] [l1_imu_fix]: imu_in=5431 lowstate_in=9954 published=5431
+[INFO] [1786079005.060672155] [l1_imu_fix]: imu_in=6054 lowstate_in=11201 published=6054
+[INFO] [1786079010.060663510] [l1_imu_fix]: imu_in=6680 lowstate_in=12452 published=6680
+[INFO] [1786079015.060686949] [l1_imu_fix]: imu_in=7304 lowstate_in=13692 published=7304
+[INFO] [1786079020.060762295] [l1_imu_fix]: imu_in=7801 lowstate_in=14383 published=7801
+[INFO] [1786079025.060659800] [l1_imu_fix]: imu_in=8300 lowstate_in=15092 published=8300
+[INFO] [1786079030.060681621] [l1_imu_fix]: imu_in=8824 lowstate_in=15827 published=8824
+[INFO] [1786079035.060657369] [l1_imu_fix]: imu_in=9448 lowstate_in=17074 published=9448
+[INFO] [1786079040.060746416] [l1_imu_fix]: imu_in=10073 lowstate_in=18320 published=10073
+[INFO] [1786079045.060651758] [l1_imu_fix]: imu_in=10698 lowstate_in=19570 published=10698
+[INFO] [1786079050.060679230] [l1_imu_fix]: imu_in=11119 lowstate_in=20132 published=11119
+[INFO] [1786079055.060637622] [l1_imu_fix]: imu_in=11697 lowstate_in=21173 published=11697
+[INFO] [1786079060.060623561] [l1_imu_fix]: imu_in=12320 lowstate_in=22417 published=12320
+[INFO] [1786079065.060622769] [l1_imu_fix]: imu_in=12943 lowstate_in=23658 published=12943
+[INFO] [1786079070.060689407] [l1_imu_fix]: imu_in=13564 lowstate_in=24896 published=13564
+[INFO] [1786079075.060683724] [l1_imu_fix]: imu_in=14187 lowstate_in=26138 published=14187
+[INFO] [1786079080.060746766] [l1_imu_fix]: imu_in=14679 lowstate_in=26870 published=14679
+[INFO] [1786079085.060663473] [l1_imu_fix]: imu_in=15182 lowstate_in=27572 published=15182
+[INFO] [1786079090.060771871] [l1_imu_fix]: imu_in=15705 lowstate_in=28335 published=15705
+[INFO] [1786079095.060742770] [l1_imu_fix]: imu_in=16298 lowstate_in=29442 published=16298
+[INFO] [1786079100.060823914] [l1_imu_fix]: imu_in=16923 lowstate_in=30692 published=16923
+[INFO] [1786079105.060658944] [l1_imu_fix]: imu_in=17546 lowstate_in=31942 published=17546
+[INFO] [1786079110.060665572] [l1_imu_fix]: imu_in=17944 lowstate_in=32479 published=17944
+[INFO] [1786079115.060726740] [l1_imu_fix]: imu_in=18397 lowstate_in=33131 published=18397
+[INFO] [1786079120.060996211] [l1_imu_fix]: imu_in=19014 lowstate_in=34342 published=19014
+[INFO] [1786079125.060653379] [l1_imu_fix]: imu_in=19639 lowstate_in=35591 published=19639
+[INFO] [1786079130.060695889] [l1_imu_fix]: imu_in=20262 lowstate_in=36838 published=20262
+[INFO] [1786079135.060670835] [l1_imu_fix]: imu_in=20887 lowstate_in=38085 published=20887
+[INFO] [1786079140.060926083] [l1_imu_fix]: imu_in=21189 lowstate_in=38503 published=21189
+[INFO] [1786079145.060648879] [l1_imu_fix]: imu_in=21743 lowstate_in=39437 published=21743
+[INFO] [1786079150.060687755] [l1_imu_fix]: imu_in=22355 lowstate_in=40663 published=22355
+[INFO] [1786079155.060683386] [l1_imu_fix]: imu_in=22976 lowstate_in=41901 published=22976
+[INFO] [1786079160.060704541] [l1_imu_fix]: imu_in=23598 lowstate_in=43129 published=23598
+[INFO] [1786079165.060777999] [l1_imu_fix]: imu_in=24220 lowstate_in=44371 published=24220
+[INFO] [1786079170.060754539] [l1_imu_fix]: imu_in=24664 lowstate_in=45018 published=24664
+[INFO] [1786079175.060735132] [l1_imu_fix]: imu_in=25254 lowstate_in=46086 published=25254
+[INFO] [1786079180.060656358] [l1_imu_fix]: imu_in=25876 lowstate_in=47329 published=25876
+[INFO] [1786079185.060820919] [l1_imu_fix]: imu_in=26501 lowstate_in=48568 published=26501
+[INFO] [1786079190.060633381] [l1_imu_fix]: imu_in=27114 lowstate_in=49777 published=27114
+[INFO] [1786079195.060667336] [l1_imu_fix]: imu_in=27738 lowstate_in=51019 published=27738
+[INFO] [1786079200.060682890] [l1_imu_fix]: imu_in=28079 lowstate_in=51522 published=28079
+[INFO] [1786079205.060659847] [l1_imu_fix]: imu_in=28543 lowstate_in=52168 published=28543
+[INFO] [1786079210.060671320] [l1_imu_fix]: imu_in=29165 lowstate_in=53386 published=29165
+[INFO] [1786079215.060611424] [l1_imu_fix]: imu_in=29789 lowstate_in=54624 published=29789
+[INFO] [1786079220.060659408] [l1_imu_fix]: imu_in=30415 lowstate_in=55872 published=30415
+[INFO] [1786079225.061068795] [l1_imu_fix]: imu_in=31039 lowstate_in=57116 published=31039
+[INFO] [1786079230.060689831] [l1_imu_fix]: imu_in=31407 lowstate_in=57649 published=31407
+[INFO] [1786079235.060648420] [l1_imu_fix]: imu_in=31915 lowstate_in=58384 published=31915
+[INFO] [1786079240.060679319] [l1_imu_fix]: imu_in=32540 lowstate_in=59630 published=32540
+[INFO] [1786079245.060825725] [l1_imu_fix]: imu_in=33165 lowstate_in=60872 published=33165
+[INFO] [1786079250.060651941] [l1_imu_fix]: imu_in=33788 lowstate_in=62111 published=33788
+[INFO] [1786079255.060775440] [l1_imu_fix]: imu_in=34412 lowstate_in=63356 published=34412
+[INFO] [1786079260.060652674] [l1_imu_fix]: imu_in=34805 lowstate_in=63913 published=34805
+[INFO] [1786079265.060881500] [l1_imu_fix]: imu_in=35319 lowstate_in=64722 published=35319
+[INFO] [1786079270.060686093] [l1_imu_fix]: imu_in=35917 lowstate_in=65868 published=35917
+[INFO] [1786079275.060638026] [l1_imu_fix]: imu_in=36536 lowstate_in=67096 published=36536
+[INFO] [1786079280.060640257] [l1_imu_fix]: imu_in=37155 lowstate_in=68340 published=37155
+[INFO] [1786079285.060902744] [l1_imu_fix]: imu_in=37780 lowstate_in=69581 published=37780
+[INFO] [1786079290.060902581] [l1_imu_fix]: imu_in=38165 lowstate_in=70135 published=38165
+[INFO] [1786079295.060783329] [l1_imu_fix]: imu_in=38758 lowstate_in=71243 published=38758
+[INFO] [1786079300.060733224] [l1_imu_fix]: imu_in=39382 lowstate_in=72485 published=39382
+[INFO] [1786079305.060623939] [l1_imu_fix]: imu_in=40007 lowstate_in=73722 published=40007
+[INFO] [1786079310.060767284] [l1_imu_fix]: imu_in=40630 lowstate_in=74953 published=40630
+[INFO] [1786079315.060629218] [l1_imu_fix]: imu_in=41257 lowstate_in=76204 published=41257
+[INFO] [1786079320.060766640] [l1_imu_fix]: imu_in=41680 lowstate_in=76886 published=41680
+[INFO] [1786079325.060675135] [l1_imu_fix]: imu_in=42168 lowstate_in=77662 published=42168
+[INFO] [1786079330.060655702] [l1_imu_fix]: imu_in=42792 lowstate_in=78911 published=42792
+[INFO] [1786079335.060682664] [l1_imu_fix]: imu_in=43415 lowstate_in=80161 published=43415
+[INFO] [1786079340.060668417] [l1_imu_fix]: imu_in=44037 lowstate_in=81410 published=44037
+[INFO] [1786079345.060669126] [l1_imu_fix]: imu_in=44661 lowstate_in=82660 published=44661
+[INFO] [1786079350.060681807] [l1_imu_fix]: imu_in=45079 lowstate_in=83303 published=45079
+[INFO] [1786079355.060696979] [l1_imu_fix]: imu_in=45651 lowstate_in=84315 published=45651
+[INFO] [1786079360.060761448] [l1_imu_fix]: imu_in=46274 lowstate_in=85562 published=46274
+[INFO] [1786079365.060736835] [l1_imu_fix]: imu_in=46898 lowstate_in=86810 published=46898
+[INFO] [1786079370.060758099] [l1_imu_fix]: imu_in=47521 lowstate_in=88058 published=47521
+[INFO] [1786079375.060679118] [l1_imu_fix]: imu_in=48144 lowstate_in=89308 published=48144
+[INFO] [1786079380.060789391] [l1_imu_fix]: imu_in=48558 lowstate_in=89975 published=48558
+[INFO] [1786079385.060771368] [l1_imu_fix]: imu_in=49116 lowstate_in=90868 published=49116
+[INFO] [1786079390.060673585] [l1_imu_fix]: imu_in=49739 lowstate_in=92107 published=49739
+[INFO] [1786079395.060619634] [l1_imu_fix]: imu_in=50365 lowstate_in=93343 published=50365
+[INFO] [1786079400.060771756] [l1_imu_fix]: imu_in=50989 lowstate_in=94588 published=50989
+[INFO] [1786079405.060797824] [l1_imu_fix]: imu_in=51614 lowstate_in=95836 published=51614
+[INFO] [1786079410.060849603] [l1_imu_fix]: imu_in=52015 lowstate_in=96401 published=52015
+[INFO] [1786079415.060702018] [l1_imu_fix]: imu_in=52527 lowstate_in=97124 published=52527
+[INFO] [1786079420.060673219] [l1_imu_fix]: imu_in=53149 lowstate_in=98360 published=53149
+[INFO] [1786079425.060700268] [l1_imu_fix]: imu_in=53775 lowstate_in=99607 published=53775
+[INFO] [1786079430.060788514] [l1_imu_fix]: imu_in=54399 lowstate_in=100856 published=54399
+[INFO] [1786079435.060636710] [l1_imu_fix]: imu_in=55021 lowstate_in=102094 published=55021
+[INFO] [1786079440.060701806] [l1_imu_fix]: imu_in=55468 lowstate_in=102755 published=55468
+[INFO] [1786079445.060783941] [l1_imu_fix]: imu_in=56040 lowstate_in=103729 published=56040
+[INFO] [1786079450.060791497] [l1_imu_fix]: imu_in=56663 lowstate_in=104976 published=56663
+[INFO] [1786079455.060687412] [l1_imu_fix]: imu_in=57289 lowstate_in=106227 published=57289
+[INFO] [1786079460.060770370] [l1_imu_fix]: imu_in=57913 lowstate_in=107473 published=57913
+[INFO] [1786079465.060661649] [l1_imu_fix]: imu_in=58538 lowstate_in=108723 published=58538
+[INFO] [1786079470.060832783] [l1_imu_fix]: imu_in=59033 lowstate_in=109456 published=59033
+[INFO] [1786079475.060740223] [l1_imu_fix]: imu_in=59605 lowstate_in=110511 published=59605
+[INFO] [1786079480.060675269] [l1_imu_fix]: imu_in=60186 lowstate_in=111576 published=60186
+[INFO] [1786079485.060896889] [l1_imu_fix]: imu_in=60748 lowstate_in=112612 published=60748
+[INFO] [1786079490.060692540] [l1_imu_fix]: imu_in=61258 lowstate_in=113301 published=61258
+[INFO] [1786079495.060776938] [l1_imu_fix]: imu_in=61872 lowstate_in=114492 published=61872
+[INFO] [1786079500.060655577] [l1_imu_fix]: imu_in=62350 lowstate_in=115146 published=62350
+[INFO] [1786079505.060655134] [l1_imu_fix]: imu_in=62972 lowstate_in=116366 published=62972
+[INFO] [1786079510.060681082] [l1_imu_fix]: imu_in=63597 lowstate_in=117606 published=63597
+[INFO] [1786079515.060675020] [l1_imu_fix]: imu_in=64222 lowstate_in=118849 published=64222
+[INFO] [1786079520.060655905] [l1_imu_fix]: imu_in=64846 lowstate_in=120101 published=64846
+[INFO] [1786079525.060649127] [l1_imu_fix]: imu_in=65469 lowstate_in=121345 published=65469
+[INFO] [1786079530.060685324] [l1_imu_fix]: imu_in=65862 lowstate_in=121870 published=65862
+[INFO] [1786079535.060654274] [l1_imu_fix]: imu_in=66429 lowstate_in=122832 published=66429
+[INFO] [1786079540.060780861] [l1_imu_fix]: imu_in=67050 lowstate_in=124071 published=67050
+[INFO] [1786079545.060645996] [l1_imu_fix]: imu_in=67672 lowstate_in=125288 published=67672
+[INFO] [1786079550.060652226] [l1_imu_fix]: imu_in=68296 lowstate_in=126530 published=68296
+[INFO] [1786079555.060667952] [l1_imu_fix]: imu_in=68921 lowstate_in=127777 published=68921
+[INFO] [1786079560.060863324] [l1_imu_fix]: imu_in=69415 lowstate_in=128477 published=69415
+[INFO] [1786079565.060659500] [l1_imu_fix]: imu_in=69901 lowstate_in=129152 published=69901
+[INFO] [1786079570.060626213] [l1_imu_fix]: imu_in=70399 lowstate_in=129869 published=70399
+[INFO] [1786079575.060666367] [l1_imu_fix]: imu_in=70882 lowstate_in=130548 published=70882
+[INFO] [1786079580.060720974] [l1_imu_fix]: imu_in=71414 lowstate_in=131394 published=71414
+[INFO] [1786079585.061171417] [l1_imu_fix]: imu_in=72041 lowstate_in=132644 published=72041
+[INFO] [1786079590.060760511] [l1_imu_fix]: imu_in=72459 lowstate_in=133257 published=72459
+[INFO] [1786079595.060628449] [l1_imu_fix]: imu_in=73052 lowstate_in=134361 published=73052
+[INFO] [1786079600.060669491] [l1_imu_fix]: imu_in=73675 lowstate_in=135610 published=73675
+[INFO] [1786079605.060782896] [l1_imu_fix]: imu_in=74298 lowstate_in=136860 published=74298
+[INFO] [1786079610.060637723] [l1_imu_fix]: imu_in=74922 lowstate_in=138107 published=74922
+[INFO] [1786079615.060657238] [l1_imu_fix]: imu_in=75545 lowstate_in=139356 published=75545
+[INFO] [1786079620.060675277] [l1_imu_fix]: imu_in=75921 lowstate_in=139944 published=75921
+[INFO] [1786079625.060762045] [l1_imu_fix]: imu_in=76478 lowstate_in=140852 published=76478
+[INFO] [1786079630.060693127] [l1_imu_fix]: imu_in=77102 lowstate_in=142088 published=77102
+[INFO] [1786079635.060603722] [l1_imu_fix]: imu_in=77726 lowstate_in=143336 published=77726
+[INFO] [1786079640.060675699] [l1_imu_fix]: imu_in=78350 lowstate_in=144586 published=78350
+[INFO] [1786079645.060769007] [l1_imu_fix]: imu_in=78976 lowstate_in=145834 published=78976
+[INFO] [1786079650.060776727] [l1_imu_fix]: imu_in=79341 lowstate_in=146326 published=79341
+[INFO] [1786079655.060730550] [l1_imu_fix]: imu_in=79918 lowstate_in=147284 published=79918
+[INFO] [1786079660.060618211] [l1_imu_fix]: imu_in=80540 lowstate_in=148525 published=80540
+[INFO] [1786079665.060708975] [l1_imu_fix]: imu_in=81165 lowstate_in=149774 published=81165
+[INFO] [1786079670.060650974] [l1_imu_fix]: imu_in=81788 lowstate_in=151023 published=81788
+[INFO] [1786079675.060798599] [l1_imu_fix]: imu_in=82412 lowstate_in=152270 published=82412
+[INFO] [1786079680.060658290] [l1_imu_fix]: imu_in=82770 lowstate_in=152773 published=82770
+[INFO] [1786079685.060769905] [l1_imu_fix]: imu_in=83334 lowstate_in=153724 published=83334
+[INFO] [1786079690.060641992] [l1_imu_fix]: imu_in=83960 lowstate_in=154973 published=83960
+[INFO] [1786079695.060667826] [l1_imu_fix]: imu_in=84583 lowstate_in=156223 published=84583
+[INFO] [1786079700.060658461] [l1_imu_fix]: imu_in=85207 lowstate_in=157469 published=85207
+[INFO] [1786079705.060785726] [l1_imu_fix]: imu_in=85830 lowstate_in=158718 published=85830
+[INFO] [1786079710.060811559] [l1_imu_fix]: imu_in=86249 lowstate_in=159365 published=86249
+[INFO] [1786079715.060626462] [l1_imu_fix]: imu_in=86763 lowstate_in=160141 published=86763
+[INFO] [1786079720.060624822] [l1_imu_fix]: imu_in=87387 lowstate_in=161390 published=87387
+[INFO] [1786079725.060659037] [l1_imu_fix]: imu_in=88010 lowstate_in=162639 published=88010
+[INFO] [1786079730.060674557] [l1_imu_fix]: imu_in=88633 lowstate_in=163882 published=88633
+[INFO] [1786079735.060678422] [l1_imu_fix]: imu_in=89258 lowstate_in=165131 published=89258
+[INFO] [1786079740.060689949] [l1_imu_fix]: imu_in=89635 lowstate_in=165702 published=89635
+[INFO] [1786079745.060684344] [l1_imu_fix]: imu_in=90160 lowstate_in=166477 published=90160
+[INFO] [1786079750.060674918] [l1_imu_fix]: imu_in=90785 lowstate_in=167726 published=90785
+[INFO] [1786079755.060676374] [l1_imu_fix]: imu_in=91402 lowstate_in=168958 published=91402
+[INFO] [1786079760.060717821] [l1_imu_fix]: imu_in=92025 lowstate_in=170203 published=92025
+[INFO] [1786079765.060986051] [l1_imu_fix]: imu_in=92650 lowstate_in=171451 published=92650
+[INFO] [1786079770.060696943] [l1_imu_fix]: imu_in=93072 lowstate_in=172031 published=93072
+[INFO] [1786079775.060778920] [l1_imu_fix]: imu_in=93632 lowstate_in=173002 published=93632
+[INFO] [1786079780.060889202] [l1_imu_fix]: imu_in=94256 lowstate_in=174248 published=94256
+[INFO] [1786079785.060664306] [l1_imu_fix]: imu_in=94880 lowstate_in=175494 published=94880
+[INFO] [1786079790.060775825] [l1_imu_fix]: imu_in=95502 lowstate_in=176742 published=95502
+[INFO] [1786079795.060652782] [l1_imu_fix]: imu_in=96125 lowstate_in=177992 published=96125
+[INFO] [1786079800.060826133] [l1_imu_fix]: imu_in=96624 lowstate_in=178693 published=96624
+[INFO] [1786079805.060693373] [l1_imu_fix]: imu_in=97101 lowstate_in=179359 published=97101
+[INFO] [1786079810.060658255] [l1_imu_fix]: imu_in=97617 lowstate_in=180089 published=97617
+[INFO] [1786079815.060748637] [l1_imu_fix]: imu_in=98212 lowstate_in=181201 published=98212
+[INFO] [1786079820.060664013] [l1_imu_fix]: imu_in=98838 lowstate_in=182449 published=98838
+[INFO] [1786079825.060729640] [l1_imu_fix]: imu_in=99460 lowstate_in=183699 published=99460
+[INFO] [1786079830.060657745] [l1_imu_fix]: imu_in=99863 lowstate_in=184328 published=99863
+[INFO] [1786079835.060748550] [l1_imu_fix]: imu_in=100414 lowstate_in=185250 published=100414
+[INFO] [1786079840.060856221] [l1_imu_fix]: imu_in=100555 lowstate_in=185532 published=100555
+[INFO] [1786079845.060786213] [l1_imu_fix]: imu_in=100555 lowstate_in=185532 published=100555
+[INFO] [1786079850.060886132] [l1_imu_fix]: imu_in=100555 lowstate_in=185532 published=100555
+[INFO] [1786079855.060846929] [l1_imu_fix]: imu_in=100555 lowstate_in=185532 published=100555
+[INFO] [1786079860.060915602] [l1_imu_fix]: imu_in=100555 lowstate_in=185532 published=100555
+Traceback (most recent call last):
+  File "/home/hyo/fastlio_ws/tools/l1_imu_fix.py", line 169, in main
+    rclpy.spin(node)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 229, in spin
+    executor.spin_once()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 808, in spin_once
+    self._spin_once_impl(timeout_sec)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 797, in _spin_once_impl
+    handler, entity, node = self.wait_for_ready_callbacks(timeout_sec=timeout_sec)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 780, in wait_for_ready_callbacks
+    return next(self._cb_iter)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 681, in _wait_for_ready_callbacks
+    raise ExternalShutdownException()
+rclpy.executors.ExternalShutdownException
+
+During handling of the above exception, another exception occurred:
+
+Traceback (most recent call last):
+  File "/home/hyo/fastlio_ws/tools/l1_imu_fix.py", line 178, in <module>
+    main()
+  File "/home/hyo/fastlio_ws/tools/l1_imu_fix.py", line 174, in main
+    rclpy.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 130, in shutdown
+    _shutdown(context=context)
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/utilities.py", line 58, in shutdown
+    return context.shutdown()
+  File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/context.py", line 102, in shutdown
+    self.__context.shutdown()
+rclpy._rclpy_pybind11.RCLError: failed to shutdown: rcl_shutdown already called on the given context, at ./src/rcl/init.c:241

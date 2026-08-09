@@ -1,0 +1,95 @@
+[
+  {
+    "name": "base_1",
+    "odom_frames": 6616,
+    "traj_points": 6616,
+    "path_length_m": 263.975,
+    "start_end_dist_m": 54.365,
+    "start_end_dist_xy_m": 54.27,
+    "wall_span_s": 884.1,
+    "cpu_mean_percent": 4.4,
+    "cpu_max_percent": 12.5,
+    "cpu_samples": 913,
+    "stall_count_gt_1s": 1,
+    "stalls": [
+      {
+        "index": 1829,
+        "gap_s": 1.02
+      }
+    ],
+    "imu_init_steps": 5,
+    "imu_init_seq": "1→2→19→52→100",
+    "imu_init_ok": true,
+    "loop_back": 0,
+    "no_eff_points": 0,
+    "pcd_points": 4323259,
+    "x_p99": 65.6,
+    "y_p99": 22.75,
+    "z_p99": 5.34,
+    "x_minmax": 114.87,
+    "y_minmax": 69.81,
+    "ground_z": -0.791
+  },
+  {
+    "name": "base_2",
+    "odom_frames": 6616,
+    "traj_points": 6616,
+    "path_length_m": 256.413,
+    "start_end_dist_m": 55.664,
+    "start_end_dist_xy_m": 55.582,
+    "wall_span_s": 884.1,
+    "cpu_mean_percent": 5.4,
+    "cpu_max_percent": 26.5,
+    "cpu_samples": 913,
+    "stall_count_gt_1s": 1,
+    "stalls": [
+      {
+        "index": 1829,
+        "gap_s": 1.02
+      }
+    ],
+    "imu_init_steps": 5,
+    "imu_init_seq": "1→2→19→52→100",
+    "imu_init_ok": true,
+    "loop_back": 0,
+    "no_eff_points": 0,
+    "pcd_points": 4323259,
+    "x_p99": 48.78,
+    "y_p99": 48.52,
+    "z_p99": 5.06,
+    "x_minmax": 107.05,
+    "y_minmax": 98.33,
+    "ground_z": -0.681
+  },
+  {
+    "name": "base_3",
+    "odom_frames": 6616,
+    "traj_points": 6616,
+    "path_length_m": 264.88,
+    "start_end_dist_m": 61.075,
+    "start_end_dist_xy_m": 60.934,
+    "wall_span_s": 884.1,
+    "cpu_mean_percent": 5.2,
+    "cpu_max_percent": 18.6,
+    "cpu_samples": 913,
+    "stall_count_gt_1s": 1,
+    "stalls": [
+      {
+        "index": 1829,
+        "gap_s": 1.02
+      }
+    ],
+    "imu_init_steps": 5,
+    "imu_init_seq": "1→2→19→52→100",
+    "imu_init_ok": true,
+    "loop_back": 0,
+    "no_eff_points": 0,
+    "pcd_points": 4323259,
+    "x_p99": 58.39,
+    "y_p99": 42.27,
+    "z_p99": 5.59,
+    "x_minmax": 121.1,
+    "y_minmax": 91.61,
+    "ground_z": -0.813
+  }
+]

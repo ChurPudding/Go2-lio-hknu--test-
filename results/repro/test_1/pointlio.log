@@ -1,0 +1,17 @@
+[INFO] [launch]: All log files can be found below /home/hyo/.ros/log/2026-08-07-12-35-42-431714-sin-26649
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [pointlio_mapping-1]: process started with pid [26653]
+[INFO] [nice-2]: process started with pid [26655]
+[pointlio_mapping-1] Multi thread started 
+[pointlio_mapping-1] lidar_type: 5
+[pointlio_mapping-1] ~~~~/home/hyo/catkin_point_lio_unilidar/src/point_lio_ros2/ file opened
+[nice-2] [INFO] [1786073742.721072448] [rviz2]: Stereo is NOT SUPPORTED
+[nice-2] [INFO] [1786073742.721125870] [rviz2]: OpenGl version: 4.6 (GLSL 4.6)
+[nice-2] [INFO] [1786073742.736509854] [rviz2]: Stereo is NOT SUPPORTED
+[pointlio_mapping-1] first lidar time1.78592e+09
+[pointlio_mapping-1] [INFO] [1786073746.999595996] [laserMapping]: IMU Initializing: 1.0 %
+[pointlio_mapping-1] [WARN] [1786073746.999668753] [laserMapping]: Reset ImuProcess
+[pointlio_mapping-1] [INFO] [1786073747.086042451] [laserMapping]: IMU Initializing: 2.0 %
+[pointlio_mapping-1] [INFO] [1786073747.216220569] [laserMapping]: IMU Initializing: 19.0 %
+[pointlio_mapping-1] [INFO] [1786073747.344983628] [laserMapping]: IMU Initializing: 52.0 %
+[pointlio_mapping-1] [INFO] [1786073747.345010841] [laserMapping]: IMU Initializing: 100.0 %

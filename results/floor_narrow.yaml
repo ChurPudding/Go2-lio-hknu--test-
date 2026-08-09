@@ -1,0 +1,6 @@
+image: floor_narrow.pgm
+resolution: 0.1000
+origin: [-10.1992, -18.7294, 0.0]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196

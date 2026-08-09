@@ -1,0 +1,15 @@
+### IMU 초기화
+[pointlio_mapping-1] [INFO] [1786076864.958102777] [laserMapping]: IMU Initializing: 1.0 %
+[pointlio_mapping-1] [INFO] [1786076865.044736222] [laserMapping]: IMU Initializing: 2.0 %
+[pointlio_mapping-1] [INFO] [1786076865.175290858] [laserMapping]: IMU Initializing: 19.0 %
+[pointlio_mapping-1] [INFO] [1786076865.303463336] [laserMapping]: IMU Initializing: 52.0 %
+[pointlio_mapping-1] [INFO] [1786076865.303490196] [laserMapping]: IMU Initializing: 100.0 %
+
+### Reset ImuProcess
+1
+
+### imu loop back 횟수
+0
+
+### No Effective Points 횟수
+0

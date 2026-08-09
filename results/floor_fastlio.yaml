@@ -1,0 +1,6 @@
+image: floor_fastlio.pgm
+resolution: 0.1000
+origin: [24.2605, -11.7921, 0.0]
+negate: 0
+occupied_thresh: 0.65
+free_thresh: 0.196

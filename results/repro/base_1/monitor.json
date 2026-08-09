@@ -1,0 +1,18 @@
+{
+  "odom_frames": 6616,
+  "traj_points": 6616,
+  "path_length_m": 263.975,
+  "start_end_dist_m": 54.365,
+  "start_end_dist_xy_m": 54.27,
+  "wall_span_s": 884.1,
+  "cpu_mean_percent": 4.4,
+  "cpu_max_percent": 12.5,
+  "cpu_samples": 913,
+  "stall_count_gt_1s": 1,
+  "stalls": [
+    {
+      "index": 1829,
+      "gap_s": 1.02
+    }
+  ]
+}

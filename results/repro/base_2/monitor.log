@@ -1,0 +1,34 @@
+[INFO] [1786077899.588151041] [repro_monitor]: 감시 시작: /aft_mapped_to_init → /home/hyo/fastlio_ws/results/repro/base_2
+[INFO] [1786077975.403844771] [repro_monitor]:   처리 프레임 500
+[INFO] [1786078041.345793479] [repro_monitor]:   처리 프레임 1000
+[INFO] [1786078108.495708847] [repro_monitor]:   처리 프레임 1500
+[INFO] [1786078175.820579293] [repro_monitor]:   처리 프레임 2000
+[INFO] [1786078243.662298221] [repro_monitor]:   처리 프레임 2500
+[INFO] [1786078310.101664195] [repro_monitor]:   처리 프레임 3000
+[INFO] [1786078376.645287657] [repro_monitor]:   처리 프레임 3500
+[INFO] [1786078442.290333744] [repro_monitor]:   처리 프레임 4000
+[INFO] [1786078508.337148505] [repro_monitor]:   처리 프레임 4500
+[INFO] [1786078575.375366861] [repro_monitor]:   처리 프레임 5000
+[INFO] [1786078642.506386230] [repro_monitor]:   처리 프레임 5500
+[INFO] [1786078710.382493767] [repro_monitor]:   처리 프레임 6000
+[INFO] [1786078776.553449451] [repro_monitor]:   처리 프레임 6500
+
+[repro_monitor] 저장 완료
+{
+  "odom_frames": 6616,
+  "traj_points": 6616,
+  "path_length_m": 256.413,
+  "start_end_dist_m": 55.664,
+  "start_end_dist_xy_m": 55.582,
+  "wall_span_s": 884.1,
+  "cpu_mean_percent": 5.4,
+  "cpu_max_percent": 26.5,
+  "cpu_samples": 913,
+  "stall_count_gt_1s": 1,
+  "stalls": [
+    {
+      "index": 1829,
+      "gap_s": 1.02
+    }
+  ]
+}
