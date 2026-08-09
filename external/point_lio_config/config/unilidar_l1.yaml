@@ -1,0 +1,66 @@
+/**:
+    ros__parameters:
+        common:
+            lid_topic:  "/utlidar/cloud"
+            imu_topic:  "/l1_imu_fixed"
+            con_frame: false # true: if you need to combine several LiDAR frames into one
+            con_frame_num: 1 # the number of frames combined
+            cut_frame: false # true: if you need to cut one LiDAR frame into several subframes
+            cut_frame_time_interval: 0.1 # should be integral fraction of 1 / LiDAR frequency   
+            time_lag_imu_to_lidar: 0.0 # Time offset between LiDAR and IMU calibrated by other algorithms, e.g., LI-Init (find in Readme)
+                                        # the timesample of IMU is transferred from the current timeline to LiDAR's timeline by subtracting this value
+
+        preprocess:
+            lidar_type: 5
+            scan_line: 18
+            timestamp_unit: 0           # the unit of time/t field in the PointCloud2 rostopic: 0-second, 1-milisecond, 2-microsecond, 3-nanosecond.
+            blind: 0.5
+
+        mapping:
+            imu_en: true
+            start_in_aggressive_motion: false # if true, a preknown gravity should be provided in following gravity_init
+            extrinsic_est_en: false # for aggressive motion, set this variable false
+            imu_time_inte: 0.004 # = 1 / frequency of IMU
+            satu_acc: 30.0 # the saturation value of IMU's acceleration. not related to the units
+            satu_gyro: 35.0 # the saturation value of IMU's angular velocity. not related to the units
+            acc_norm: 9.81 # 1.0 for g as unit, 9.81 for m/s^2 as unit of the IMU's acceleration
+            lidar_meas_cov: 0.01 # 0.001
+            acc_cov_output: 500.0
+            gyr_cov_output: 1000.0
+            b_acc_cov: 0.0001 
+            b_gyr_cov: 0.0001 
+            imu_meas_acc_cov: 0.1 #0.1 # 2
+            imu_meas_omg_cov: 0.1 #0.1 # 2 
+            gyr_cov_input: 0.01 # for IMU as input model
+            acc_cov_input: 0.1 # for IMU as input model
+            plane_thr: 0.1 # 0.05, the threshold for plane criteria, the smaller, the flatter a plane
+            match_s: 81.0
+            fov_degree: 180.0
+            det_range: 100.0
+            # ★ 내장 IMU가 기울어 장착됨(roll~110/pitch~18).
+            #   gravity_align=true로 월드축을 지정 중력에 강제 정렬하면, 그 지정 방향이
+            #   실제(기울어진) 중력과 어긋나 궤적이 서서히 아래로 처지는 드리프트가 발생.
+            #   → 강제 정렬을 끄고 필터가 초기 정지구간에서 잡은 자세를 그대로 기준으로 사용.
+            #   지도가 실제 IMU 기울기만큼 살짝 기울 수 있으나, 궤적 형상/상대오차는 정확.
+            gravity_align: true # false: do NOT force-align world z to a specified gravity
+            gravity: [0.0, 0.0, -9.810] # (gravity_align=false이면 미사용)
+            gravity_init: [0.0, 0.0, -9.810] # preknown gravity in the first IMU body frame, use when imu_en is false or start from a non-stationary state
+            
+            # transform from imu to lidar
+            extrinsic_T: [ 0.007698, 0.014655, -0.00667] # ulhk # [-0.5, 1.4, 1.5] # utbm
+            extrinsic_R: [ 1.0, 0.0, 0.0,
+                          0.0, 1.0, 0.0,
+                          0.0, 0.0, 1.0 ] # ulhk 4 utbm 3
+
+        odometry: 
+            publish_odometry_without_downsample: false  
+
+        publish:
+            path_en: true                 # false: close the path output
+            scan_publish_en: true         # false: close all the point cloud output
+            scan_bodyframe_pub_en: false  # true: output the point cloud scans in IMU-body-frame
+
+        pcd_save:
+            pcd_save_en: true       # save map to pcd file
+            interval: -1            # how many LiDAR frames saved in each pcd file; 
+                                        # -1 : all frames will be saved in ONE pcd file, may lead to memory crash when having too much frames.

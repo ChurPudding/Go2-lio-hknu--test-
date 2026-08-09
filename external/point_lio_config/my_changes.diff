@@ -1,0 +1,62 @@
+diff --git a/config/unilidar_l1.yaml b/config/unilidar_l1.yaml
+index 3d868c5..3a9628d 100644
+--- a/config/unilidar_l1.yaml
++++ b/config/unilidar_l1.yaml
+@@ -1,8 +1,8 @@
+ /**:
+     ros__parameters:
+         common:
+-            lid_topic: "/unilidar/cloud" 
+-            imu_topic: "/unilidar/imu" 
++            lid_topic:  "/utlidar/cloud"
++            imu_topic:  "/l1_imu_fixed"
+             con_frame: false # true: if you need to combine several LiDAR frames into one
+             con_frame_num: 1 # the number of frames combined
+             cut_frame: false # true: if you need to cut one LiDAR frame into several subframes
+@@ -37,9 +37,14 @@
+             match_s: 81.0
+             fov_degree: 180.0
+             det_range: 100.0
+-            gravity_align: true # true to align the z axis of world frame with the direction of gravity, and the gravity direction should be specified below
+-            gravity: [0.0, 0.0, -9.810] # [0.0, 9.810, 0.0] # gravity to be aligned
+-            gravity_init: [0.0, 0.0, -9.810] # [0.0, 9.810, 0.0] # # preknown gravity in the first IMU body frame, use when imu_en is false or start from a non-stationary state
++            # ★ 내장 IMU가 기울어 장착됨(roll~110/pitch~18).
++            #   gravity_align=true로 월드축을 지정 중력에 강제 정렬하면, 그 지정 방향이
++            #   실제(기울어진) 중력과 어긋나 궤적이 서서히 아래로 처지는 드리프트가 발생.
++            #   → 강제 정렬을 끄고 필터가 초기 정지구간에서 잡은 자세를 그대로 기준으로 사용.
++            #   지도가 실제 IMU 기울기만큼 살짝 기울 수 있으나, 궤적 형상/상대오차는 정확.
++            gravity_align: true # false: do NOT force-align world z to a specified gravity
++            gravity: [0.0, 0.0, -9.810] # (gravity_align=false이면 미사용)
++            gravity_init: [0.0, 0.0, -9.810] # preknown gravity in the first IMU body frame, use when imu_en is false or start from a non-stationary state
+             
+             # transform from imu to lidar
+             extrinsic_T: [ 0.007698, 0.014655, -0.00667] # ulhk # [-0.5, 1.4, 1.5] # utbm
+@@ -48,7 +53,7 @@
+                           0.0, 0.0, 1.0 ] # ulhk 4 utbm 3
+ 
+         odometry: 
+-            publish_odometry_without_downsample: true  
++            publish_odometry_without_downsample: false  
+ 
+         publish:
+             path_en: true                 # false: close the path output
+@@ -58,4 +63,4 @@
+         pcd_save:
+             pcd_save_en: true       # save map to pcd file
+             interval: -1            # how many LiDAR frames saved in each pcd file; 
+-                                        # -1 : all frames will be saved in ONE pcd file, may lead to memory crash when having too much frames.
+\ No newline at end of file
++                                        # -1 : all frames will be saved in ONE pcd file, may lead to memory crash when having too much frames.
+diff --git a/launch/correct_odom_unilidar_l1.launch.py b/launch/correct_odom_unilidar_l1.launch.py
+index 934d187..9f10b4b 100644
+--- a/launch/correct_odom_unilidar_l1.launch.py
++++ b/launch/correct_odom_unilidar_l1.launch.py
+@@ -26,7 +26,7 @@ def generate_launch_description():
+             'runtime_pos_log_enable': False,  # Option: True
+             'odom_only': True, # Option: False
+             'odom_header_frame_id': "odom",     # Default: "camera_init"
+-            'odom_child_frame_id': "base_link", # Default: "aft_mapped"
++            'odom_child_frame_id': "base", # Default: "aft_mapped"
+         }
+     ]
+ 
