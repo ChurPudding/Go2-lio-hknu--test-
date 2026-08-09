@@ -1,0 +1,170 @@
+diff --git a/config/params.yaml b/config/params.yaml
+index dd334c9..5fc8d33 100644
+--- a/config/params.yaml
++++ b/config/params.yaml
+@@ -1,93 +1,95 @@
+ /**:
+   ros__parameters:
++    # ── Topics ────────────────────────────────────────────────────
++    # /utlidar/cloud : 원본 (약 4,000점 @15Hz). cloud_deskewed 는 중복점 문제 있음
++    # /l1_imu_fixed  : l1_imu_fix.py 출력 (L1 자이로 + 몸통 가속도, LiDAR 프레임)
++    pointCloudTopic: "/utlidar/cloud"
++    imuTopic: "/l1_imu_fixed"
++    odomTopic: "odometry/imu"
++    gpsTopic: "odometry/gpsz"
+ 
+-    # Topics
+-    pointCloudTopic: "/points"                   # Point cloud data
+-    imuTopic: "/imu/data"                        # IMU data
+-    odomTopic: "odometry/imu"                    # IMU pre-preintegration odometry, same frequency as IMU
+-    gpsTopic: "odometry/gpsz"                    # GPS odometry topic from navsat, see module_navsat.launch file
+-
+-    # Frames
+-    lidarFrame: "lidar_link"
+-    baselinkFrame: "base_link"
++    # ── Frames ────────────────────────────────────────────────────
++    # Go2 URDF 의 root link 는 base_link 가 아니라 base
++    lidarFrame: "utlidar_lidar"
++    baselinkFrame: "base"
+     odometryFrame: "odom"
+     mapFrame: "map"
+ 
+-    # GPS Settings
+-    useImuHeadingInitialization: false           # if using GPS data, set to "true"
+-    useGpsElevation: false                       # if GPS elevation is bad, set to "false"
+-    gpsCovThreshold: 2.0                         # m^2, threshold for using GPS data
+-    poseCovThreshold: 25.0                       # m^2, threshold for using GPS data
+-
+-    # Export settings
+-    savePCD: false                               # https://github.com/TixiaoShan/LIO-SAM/issues/3
+-    savePCDDirectory: "/Downloads/LOAM/"         # in your home folder, starts and ends with "/". Warning: the code deletes "LOAM" folder then recreates it. See "mapOptimization" for implementation
++    # ── GPS (실내에서는 미사용) ────────────────────────────────────
++    useImuHeadingInitialization: false
++    useGpsElevation: false
++    gpsCovThreshold: 2.0
++    poseCovThreshold: 25.0
+ 
+-    # Sensor Settings
+-    sensor: ouster                               # lidar sensor type, either 'velodyne', 'ouster' or 'livox'
+-    N_SCAN: 64                                   # number of lidar channels (i.e., Velodyne/Ouster: 16, 32, 64, 128, Livox Horizon: 6)
+-    Horizon_SCAN: 512                            # lidar horizontal resolution (Velodyne:1800, Ouster:512,1024,2048, Livox Horizon: 4000)
+-    downsampleRate: 1                            # default: 1. Downsample your data if too many
+-    # points. i.e., 16 = 64 / 4, 16 = 16 / 1
+-    lidarMinRange: 1.0                           # default: 1.0, minimum lidar range to be used
+-    lidarMaxRange: 1000.0                        # default: 1000.0, maximum lidar range to be used
++    # ── Export ────────────────────────────────────────────────────
++    savePCD: true
++    savePCDDirectory: "/liosam_map/"
+ 
+-    # IMU Settings
+-    imuAccNoise: 3.9939570888238808e-03
+-    imuGyrNoise: 1.5636343949698187e-03
+-    imuAccBiasN: 6.4356659353532566e-05
+-    imuGyrBiasN: 3.5640318696367613e-05
++    # ── Sensor ────────────────────────────────────────────────────
++    # /utlidar/cloud 필드 구성이 x/y/z/intensity/ring/time 으로 Velodyne 과 동일
++    sensor: livox
++    N_SCAN: 6                    # Unitree 공식 L1 config 값
++    Horizon_SCAN: 4000             # 4000점 / 18라인 ≈ 222 → 여유 두고 240
++    downsampleRate: 1             # 이미 희소하므로 솎아내지 않음
++    lidarMinRange: 0.5            # 로봇 몸통 반사 제거. 기본 1.0 은 과함
++    lidarMaxRange: 50.0           # L1 유효 약 30m
+ 
+-    imuGravity: 9.80511
++    # ── IMU ───────────────────────────────────────────────────────
++    # 사족보행 착지 충격이 커서 기본값보다 상향. 발산 시 더 올릴 것
++    imuAccNoise: 1.0e-02
++    imuGyrNoise: 5.0e-03
++    imuAccBiasN: 1.0e-04
++    imuGyrBiasN: 1.0e-04
++    imuGravity: 9.807
+     imuRPYWeight: 0.01
+ 
++    # ── Extrinsic ─────────────────────────────────────────────────
++    # l1_imu_fix.py 가 R_LB 로 이미 LiDAR 프레임 정렬을 끝냈으므로 단위행렬.
++    # 여기에 다시 회전을 넣으면 이중 변환이 되어 발산한다.
+     extrinsicTrans:  [ 0.0,  0.0,  0.0 ]
+-    extrinsicRot:    [-1.0,  0.0,  0.0,
++    extrinsicRot:    [ 1.0,  0.0,  0.0,
++                       0.0,  1.0,  0.0,
++                       0.0,  0.0,  1.0 ]
++    extrinsicRPY:    [ 1.0,  0.0,  0.0,
+                        0.0,  1.0,  0.0,
+-                       0.0,  0.0, -1.0 ]
+-    extrinsicRPY: [ 0.0,  1.0,  0.0,
+-                   -1.0,  0.0,  0.0,
+-                    0.0,  0.0,  1.0 ]
++                       0.0,  0.0,  1.0 ]
+ 
+-    # LOAM feature threshold
++    # ── LOAM feature ──────────────────────────────────────────────
++    # 프레임당 4,000점으로 희소하므로 최소 개수를 낮춰야 특징 고갈을 피함
+     edgeThreshold: 1.0
+     surfThreshold: 0.1
+-    edgeFeatureMinValidNum: 10
+-    surfFeatureMinValidNum: 100
++    edgeFeatureMinValidNum: 5     # 기본 10
++    surfFeatureMinValidNum: 30    # 기본 100
+ 
+-    # voxel filter paprams
+-    odometrySurfLeafSize: 0.4                     # default: 0.4 - outdoor, 0.2 - indoor
+-    mappingCornerLeafSize: 0.2                    # default: 0.2 - outdoor, 0.1 - indoor
+-    mappingSurfLeafSize: 0.4                      # default: 0.4 - outdoor, 0.2 - indoor
++    # ── Voxel filter (실내 기준) ──────────────────────────────────
++    odometrySurfLeafSize: 0.2
++    mappingCornerLeafSize: 0.1
++    mappingSurfLeafSize: 0.2
+ 
+-    # robot motion constraint (in case you are using a 2D robot)
+-    z_tollerance: 1000.0                          # meters
+-    rotation_tollerance: 1000.0                   # radians
++    # ── 로봇 운동 제약 ────────────────────────────────────────────
++    z_tollerance: 1000.0
++    rotation_tollerance: 1000.0
+ 
+-    # CPU Params
+-    numberOfCores: 4                              # number of cores for mapping optimization
+-    mappingProcessInterval: 0.15                  # seconds, regulate mapping frequency
++    # ── CPU ───────────────────────────────────────────────────────
++    numberOfCores: 8
++    mappingProcessInterval: 0.15
+ 
+-    # Surrounding map
+-    surroundingkeyframeAddingDistThreshold: 1.0   # meters, regulate keyframe adding threshold
+-    surroundingkeyframeAddingAngleThreshold: 0.2  # radians, regulate keyframe adding threshold
+-    surroundingKeyframeDensity: 2.0               # meters, downsample surrounding keyframe poses   
+-    surroundingKeyframeSearchRadius: 50.0         # meters, within n meters scan-to-map optimization
+-    # (when loop closure disabled)
++    # ── Surrounding map ───────────────────────────────────────────
++    surroundingkeyframeAddingDistThreshold: 0.5   # 실내라 촘촘하게 (기본 1.0)
++    surroundingkeyframeAddingAngleThreshold: 0.2
++    surroundingKeyframeDensity: 1.0               # 기본 2.0
++    surroundingKeyframeSearchRadius: 30.0
+ 
+-    # Loop closure
++    # ── Loop closure ★ 이게 LIO-SAM 을 쓰는 이유 ──────────────────
+     loopClosureEnableFlag: true
+-    loopClosureFrequency: 1.0                     # Hz, regulate loop closure constraint add frequency
+-    surroundingKeyframeSize: 50                   # submap size (when loop closure enabled)
+-    historyKeyframeSearchRadius: 15.0             # meters, key frame that is within n meters from
+-    # current pose will be considerd for loop closure
+-    historyKeyframeSearchTimeDiff: 30.0           # seconds, key frame that is n seconds older will be
+-    # considered for loop closure
+-    historyKeyframeSearchNum: 25                  # number of hostory key frames will be fused into a
+-    # submap for loop closure
+-    historyKeyframeFitnessScore: 0.3              # icp threshold, the smaller the better alignment
++    loopClosureFrequency: 1.0
++    surroundingKeyframeSize: 50
++    historyKeyframeSearchRadius: 10.0             # 실내라 좁게 (기본 15.0)
++    historyKeyframeSearchTimeDiff: 30.0
++    historyKeyframeSearchNum: 25
++    historyKeyframeFitnessScore: 0.3
+ 
+-    # Visualization
+-    globalMapVisualizationSearchRadius: 1000.0    # meters, global map visualization radius
+-    globalMapVisualizationPoseDensity: 10.0       # meters, global map visualization keyframe density
+-    globalMapVisualizationLeafSize: 1.0           # meters, global map visualization cloud density
++    # ── Visualization ─────────────────────────────────────────────
++    globalMapVisualizationSearchRadius: 1000.0
++    globalMapVisualizationPoseDensity: 5.0
++    globalMapVisualizationLeafSize: 0.5
