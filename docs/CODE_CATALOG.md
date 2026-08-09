@@ -1,7 +1,13 @@
 # 팀원용 코드 목록
 
 `~/fastlio_ws` 저장소에 무엇이 있고 각각 언제 쓰는지 정리했습니다.
-갱신 2026-08-03 · 담당 효신
+갱신 2026-08-10 · 담당 효신
+
+> **2026-08-07 갱신**: 실내 지도 생성 방식이 Point-LIO 에서 다리
+> 오도메트리 점군 누적으로 바뀌었습니다(같은 bag 에서 드리프트 21.75% →
+> 2.63%). Point-LIO 관련 도구·설정은 삭제하지 않고 **보류**로 표시했습니다
+> — 원인 미규명 상태로 남겨 둔 것일 뿐입니다. 상세 근거는
+> `docs/2026-08-07_실험기록.md`.
 
 ---
 
@@ -12,7 +18,7 @@
 | 처음 설치했다 | `tools/install_go2_lio.sh` → `tools/doctor.sh` |
 | 로봇으로 주행하겠다 | `tools/run_indoor.sh` |
 | 녹화본으로 시험하겠다 | `tools/run_indoor.sh bag <경로>` |
-| 지도를 새로 만들겠다 | 수동 실행 → `tools/pcd_to_grid.py` |
+| 지도를 새로 만들겠다 | bag 녹화 → `tools/odom_map_build.py` → `tools/loop_correct_v2.py` → `tools/pcd_to_grid.py` |
 | 지도를 토픽으로 받겠다 | `tools/map_publisher.py` |
 | 뭔가 안 된다 | `tools/doctor.sh robot` |
 
@@ -41,6 +47,10 @@ tail -f /tmp/go2_indoor/health.log     # 위치 신뢰도
 tail -f /tmp/go2_indoor/lio.log        # Point-LIO
 tail -f /tmp/go2_indoor/pose.log       # 몸통 위치
 ```
+
+**이 파이프라인은 실시간 위치추정·주행용입니다.** 지도 생성에는 더 이상
+쓰지 않습니다 — 지도는 이 스크립트로 녹화한 bag 을 아래 A-4 절차로
+오프라인 처리해서 만듭니다.
 
 ---
 
@@ -72,17 +82,43 @@ apt → unitree_ros2 → Livox-SDK2 → livox_ros_driver2 → Point-LIO → 설�
 
 ---
 
-### A-4. `tools/pcd_to_grid.py` — 지도 만들기
+### A-4. 지도 만들기 — 다리 오도메트리 점군 누적 (2026-08-07 전환)
+
+**Point-LIO 대신 다리 오도메트리로 지도를 만듭니다.** 같은 bag 에서 드리프트가
+Point-LIO 21.75% 대 다리 오도메트리 2.63%로 8배 이상 차이가 났기 때문입니다.
+Point-LIO 경로는 원인 미규명 상태로 **보류**이며 코드는 지우지 않았습니다
+(B 절 그대로 유효, run_indoor.sh 의 실시간 위치추정에는 계속 씁니다).
+상세: `docs/2026-08-07_실험기록.md`.
 
 ```bash
-python3 tools/pcd_to_grid.py <scans.pcd> results/indoor_map 0.10
+# 1. 로봇으로 층을 한 바퀴 돌며 bag 녹화 (토픽 명시, /utlidar/cloud_deskewed 필수)
+#    출발점에 정확히·같은 방향으로 복귀할 것 (목표 2 m 이내)
+
+# 2. 점군 누적 — LIO 를 거치지 않고 bag 을 오프라인으로 직접 읽는다
+python3 tools/odom_map_build.py <bag경로> 0.05
+
+# 3. 루프 클로저 — 출발-도착 오차를 걸음마다 나눠 배분
+python3 tools/loop_correct_v2.py <bag경로>
+
+# 4. 2D 격자 변환 (기존과 동일한 도구)
+python3 tools/pcd_to_grid.py results/odommap_v2/scans.pcd results/indoor_map 0.10
 ```
 
-Point-LIO 가 저장한 3D 점군(PCD)을 A* 용 2D 점유격자로 바꿉니다.
+| 도구 | 하는 일 |
+|---|---|
+| `odom_map_build.py` | `/utlidar/cloud_deskewed`(이미 odom 좌표계)를 다리 오도메트리 자세로 그대로 누적. 변환·LIO 불필요 |
+| `loop_correct_v2.py` | 증분 재적분 방식 루프 클로저. v1(`loop_correct.py`, 전역 나선 변환)은 회전 중심에서 먼 점을 크게 밀어내 45 m 로 튕겨나간 결함으로 **폐기**, 참고용으로만 남김 |
+| `pcd_to_grid.py` | 3D 점군(PCD)을 A* 용 2D 점유격자로 변환. 입력 출처만 바뀌었을 뿐 도구 자체는 그대로 |
+
+**`loop_correct_v2.py` 는 ICP `fitness ≥ 0.9` 일 때만 적용하십시오.** 낮으면
+(예: 0.665) 보정이 오히려 지도를 비틉니다 — 이때는 `odom_map_build.py` 의
+무보정 출력을 그대로 씁니다. 실행 로그에 fitness 값이 출력됩니다.
+
+`pcd_to_grid.py` 인자:
 
 | 인자 | 뜻 |
 |---|---|
-| 1 | PCD 경로. 보통 `~/catkin_point_lio_unilidar/src/point_lio_ros2/PCD/scans.pcd` |
+| 1 | PCD 경로 |
 | 2 | 출력 접두사 |
 | 3 | 격자 한 칸 크기 [m]. **0.10 을 쓰십시오** |
 
@@ -92,7 +128,16 @@ Point-LIO 가 저장한 3D 점군(PCD)을 A* 용 2D 점유격자로 바꿉니다
 지도인데 "지도가 비었다"고 오판하기 쉽습니다.
 
 **확인 방법**: 출력의 `z 범위`가 4 m 이내면 정상입니다. 12 m 처럼 크면 이전
-회차 점군이 섞였거나 LIO 가 발산한 것이니 PCD 를 지우고 다시 만드십시오.
+회차 점군이 섞였거나 (Point-LIO 경로라면) LIO 가 발산한 것이니 PCD 를 지우고
+다시 만드십시오.
+
+> 2026-08-07 에 지면 추정 버그를 고쳤습니다. 최빈 높이 bin 의 **왼쪽 끝**이
+> 아니라 **중앙**을 지면으로 잡습니다. bin 폭이 넓을수록 오차가 컸던
+> 버그입니다 — 이미 반영돼 있으니 새로 받을 필요는 없습니다.
+
+**높이 필터 기본값(`Z_MIN, Z_MAX = 0.20, 1.50`)은 5종 비교 후 그대로
+유지합니다.** 범위를 넓히면 벽면이 서로 다른 높이에 어긋나게 쌓여 오히려
+지도가 부서집니다. 자세한 비교 그림은 실험기록 6절 참고.
 
 ---
 
@@ -136,6 +181,9 @@ ros2 run indoor_pose_subscriber indoor_map_subscriber
 ## B. 파이프라인 내부 (직접 실행할 일은 거의 없음)
 
 `run_indoor.sh` 가 자동으로 띄웁니다. 문제 원인을 찾을 때만 개별 실행합니다.
+
+**이 절은 실시간 위치추정(주행) 파이프라인입니다.** Point-LIO 기반이며
+현재도 그대로 씁니다. 지도 생성은 더 이상 여기에 의존하지 않습니다 (A-4 참고).
 
 ### B-1. `tools/l1_imu_fix.py` — IMU 보정
 
@@ -211,6 +259,33 @@ python3 tools/proximity_guard.py
 | `plot_legodom_gps.py` | 표류 그림 |
 | `go2_calib.py` | 외부 파라미터 상수 (다른 도구들이 import) |
 | `lever_check.py`, `rec_rviz.sh` | 검증·영상 녹화 |
+
+### C-1. 재현성·루프클로저·지도 검증 (2026-08-07 추가)
+
+Point-LIO 재현성 문제를 추적하다 다리 오도메트리 전환으로 이어진 과정에서
+만든 도구입니다. 배경·판정 근거는 `docs/2026-08-07_실험기록.md` 참고.
+
+| 파일 | 용도 |
+|---|---|
+| `repro_run.sh` | 재현성 실험 1회 자동 실행 (T2→T3 간격 고정, 사람 손 제거) |
+| `repro_all.sh` | 동일 조건 N회 반복 (`repro_run.sh` + 쿨다운) |
+| `repro_monitor.py` | 실행 중 처리 프레임·궤적·CPU 관측 |
+| `repro_report.py` | 반복 실행 결과를 한 표로 집계 (3층 판정: 브리지→LIO 처리량→지도) |
+| `repro_diverge.py` | 몇 회차부터·어디서 갈라지는지 강체 정합(Kabsch)으로 추적 |
+| `repro_yaw.py` | 헤딩 차이가 언제 벌어지는지 시계열로 추적 |
+| `repro_event.py` | 발산 순간의 속도·회전율·위치 |
+| `legodom_check.py` | bag 의 다리 오도메트리 드리프트 측정 (시작-끝 거리 ÷ 경로 길이) |
+| `odom_map_build.py` | 다리 오도메트리 자세로 점군 누적 (A-4 참고) |
+| `loop_correct_v2.py` | 루프 클로저 v2·증분 재적분, 현재 채택 (A-4 참고) |
+| `loop_correct.py` | 루프 클로저 v1·전역 나선. **결함으로 폐기**, 참고용 보관 |
+| `loop_correct_manual.py` | 실측(줄자) 제약을 직접 입력하는 v1 기반 변형 |
+| `map_split_check.py` | 왕복 구간이 겹쳐 그려졌는지(드리프트 여부) 판정 |
+| `grid_compare.py` | 무보정/보정 격자를 나란히 + 겹쳐서 비교 |
+| `height_band_compare.py` | 높이 필터 범위 5종을 한 번에 비교 |
+| `ground_inspect.py` | 어디를 바닥으로 잡고 있는지 시각화 (칸별 바닥 높이) |
+| `pillar_inspect.py` | 기둥 하나를 확대해 정합 뭉개짐을 정량화 |
+| `roi_time_inspect.py` | 구역을 관측 시각으로 색칠해 국소 드리프트를 드러냄 (전역 지표가 가리는 오차용) |
+| `lidar_timing.py` | L1 발행 주기·프레임당 점 개수·회전 중 번짐 계산 |
 
 ---
 
@@ -423,6 +498,13 @@ row = (y - origin_y) / resolution
 | 복도 (실패) | 18 ~ 52 m |
 | 실외 운동장 | 110 m ~ 27 km |
 
+> **2026-08-07 갱신**: 위 표는 Point-LIO 실시간 위치추정 결과입니다.
+> **실내 지도 생성은 더 이상 이 경로를 쓰지 않습니다** — 다리 오도메트리
+> 점군 누적으로 전환했습니다(같은 bag 기준 드리프트 2.63~2.90%, Point-LIO
+> 는 21.75%). Point-LIO 는 원인 미규명 상태로 **보류**이며, 상세 비교와
+> 정정된 지표(축 정렬 범위는 폐기, 회전 불변 지표 사용)는
+> `docs/2026-08-07_실험기록.md` 참고.
+
 **실외에서는 이 파이프라인을 쓰지 마십시오.** 지면 평면밖에 안 보여 방향이
 제약되지 않습니다. 실외는 GPS 가 주 위치원이며 별도 파이프라인입니다.
 
@@ -450,3 +532,25 @@ row = (y - origin_y) / resolution
 | 회전할 때 위치가 튐 | `robot_pose` 가 떠 있는지 (LEVER 보정) |
 | PCD 가 저장 안 됨 | `Ctrl+C` 로 정상 종료해야 함. 강제 종료 금지 |
 | `AMENT_TRACE_SETUP_FILES: unbound variable` | 스크립트 최신본으로 `git pull` |
+| `loop_correct_v2.py` 보정 후 지도가 이상함 | 로그의 `fitness` 확인. **0.9 미만이면 보정하지 말 것** — 무보정본 사용 |
+
+---
+
+## H. `external/` — 외부 패키지 수정본 백업
+
+`go2_ws`(URDF)와 `catkin_point_lio_unilidar`(Point-LIO)는 git 저장소가
+아니라서 이 저장소 밖에 있으면 백업이 전혀 없었습니다. 소실 시 복구
+불가였기 때문에 2026-08-08 에 이 저장소로 옮겼습니다.
+
+| 폴더 | 원본 | 실제로 바꾼 것 |
+|---|---|---|
+| `point_lio_config/` | `dfloreaa/point_lio_ros2` | 설정 4줄 — 토픽명, `l1_imu_fixed` 연결, 다운샘플 옵션, `odom_child_frame_id` |
+| `unitree_setup/` | `unitreerobotics/unitree_ros2` | `setup_go2.sh` 신규 작성 (NIC 자동 감지 + CycloneDDS) |
+| `go2_description/` | 유니트리 공식 URDF (ROS1) | ROS2 `ament_cmake` 로 변환 |
+
+복원 절차·diff 전문·`.bak` 이력은 `external/README.md` 를 보십시오.
+
+**Point-LIO 설정은 보류 상태지만 지우지 않고 그대로 보관합니다** — 21.75%
+드리프트의 원인을 나중에 규명하거나, 실외 GPS 음영 구간용 LIO 로 다시 쓸
+수 있기 때문입니다. `external/README.md` 에는 원인 규명 1순위 후보로
+지목된 `gravity_align` 설정 이력도 정리돼 있습니다.

@@ -1,7 +1,13 @@
 # 파일 의존 관계
 
 각 파일이 무엇을 받고 무엇에 기대는지 정리했습니다.
-갱신 2026-08-03 · 담당 효신
+갱신 2026-08-10 · 담당 효신
+
+> **2026-08-07 갱신**: 지도 생성 경로가 바뀌었습니다. Point-LIO 의
+> `PCD/scans.pcd` 대신 `odom_map_build.py` → `loop_correct_v2.py` 가 만든
+> PCD 를 `pcd_to_grid.py` 가 받습니다. Point-LIO 관련 노드·설정은 지우지
+> 않고 **보류**로 남겼습니다(실시간 위치추정에는 그대로 씁니다). 근거는
+> `docs/2026-08-07_실험기록.md`.
 
 ---
 
@@ -13,11 +19,13 @@ flowchart TD
         C1["/utlidar/imu<br/>250 Hz · 자이로"]
         C2["/lowstate<br/>500 Hz · 가속도"]
         C3["/utlidar/cloud<br/>15 Hz · 점군"]
-        C4["/utlidar/robot_odom<br/>150 Hz · 다리"]
+        C3D["/utlidar/cloud_deskewed<br/>15 Hz · odom 좌표계"]
+        C4["/utlidar/robot_odom<br/>150 Hz · 다리+몸통IMU 융합"]
     end
 
     CAL["tools/go2_calib.py<br/>외부 파라미터 상수"]
 
+    %% 실시간 위치추정 · 주행 (현행, run_indoor.sh)
     C1 --> BR["tools/l1_imu_fix.py"]
     C2 --> BR
     CAL -.import.-> BR
@@ -25,11 +33,11 @@ flowchart TD
 
     C3 --> LIO["mapping_unilidar_l1.launch.py<br/>외부 패키지 point_lio"]
     IMU --> LIO
-    CFG["config/unilidar_l1.yaml<br/>토픽·PCD 저장 설정"] -.읽음.-> LIO
+    CFG["config/unilidar_l1.yaml<br/>백업: external/point_lio_config/"] -.읽음.-> LIO
 
     LIO --> AFT["/aft_mapped_to_init"]
     LIO --> REG["/cloud_registered"]
-    LIO --> PCD["PCD/scans.pcd<br/>종료 시 저장"]
+    LIO -.보류.-> PCDOLD["PCD/scans.pcd (Point-LIO)<br/>⏸ 드리프트 21.75%"]
 
     AFT --> RP["tools/robot_pose.py"]
     RP --> BP["/indoor/base_pose"]
@@ -43,7 +51,19 @@ flowchart TD
     HE --> TF
     TF --> TFT["/tf"]
 
-    PCD --> P2G["tools/pcd_to_grid.py"]
+    %% 지도 생성 · bag 오프라인 (현행, 2026-08-07 전환)
+    subgraph mapping["지도 생성 · bag 오프라인 (현행)"]
+        BAG["녹화 bag<br/>cloud_deskewed + robot_odom"]
+        BAG --> OMB["tools/odom_map_build.py"]
+        OMB --> PCDNEW["PCD/scans.pcd<br/>다리 오도메트리 누적"]
+        PCDNEW --> LC2["tools/loop_correct_v2.py<br/>루프 클로저 · 증분 재적분"]
+        LC2 --> PCDCORR["scans.pcd (보정)<br/>fitness≥0.9 일 때만 적용"]
+    end
+    C3D -.기록.-> BAG
+    C4 -.기록.-> BAG
+
+    PCDCORR --> P2G["tools/pcd_to_grid.py"]
+    PCDOLD -.보류.-> P2G
     P2G --> MAP["results/indoor_map.pgm<br/>+ .yaml + .npy"]
 
     MAP --> MP["tools/map_publisher.py"]
@@ -55,6 +75,12 @@ flowchart TD
     NAV --> OUT["/map /odom /scan /tf"]
     OUT --> A["팀원A · Nav2"]
 ```
+
+**읽는 법**: 위쪽(로봇 토픽 → `l1_imu_fix` → Point-LIO)은 실시간
+위치추정·주행 경로로 현재도 그대로 씁니다. 가운데 `mapping` 상자가 지도를
+만드는 현행 경로입니다 — LIO 를 거치지 않고 녹화된 bag 을 오프라인으로
+직접 읽습니다. Point-LIO 가 저장하던 PCD 경로(점선, "보류")는 지우지
+않았지만 지도 생성에는 더 이상 쓰지 않습니다.
 
 ---
 
@@ -107,6 +133,34 @@ pcd_save_en: true
 
 내는 것: `/aft_mapped_to_init`, `/cloud_registered`, 종료 시 `PCD/scans.pcd`
 
+> ⏸ **2026-08-07 갱신**: 종료 시 저장하는 `PCD/scans.pcd` 는 지도 생성에
+> **더 이상 쓰지 않습니다** (같은 bag 기준 드리프트 21.75%, 원인 미규명 —
+> 보류). `/aft_mapped_to_init` 을 쓰는 실시간 위치추정 경로는 그대로
+> 유효합니다. 이 설정 파일의 diff·이력 전문은 `external/point_lio_config/`
+> 에 백업돼 있습니다(`external/README.md`).
+
+### `tools/odom_map_build.py` — 점군 누적 (지도 생성 1단계, 현행)
+
+| 받는 것 | 녹화 bag 안의 `/utlidar/cloud_deskewed` (파일, 오프라인) |
+| 내는 것 | `PCD/scans.pcd` (voxel 다운샘플, 기본 0.05 m) |
+| 의존 | open3d, rosbag2_py, sensor_msgs_py |
+
+LIO 를 거치지 않습니다. `cloud_deskewed` 가 이미 다리 오도메트리와 같은
+odom 좌표계이므로 좌표 변환 없이 그대로 누적합니다. bag 재생이 필요 없고
+파일을 직접 읽습니다.
+
+### `tools/loop_correct_v2.py` — 루프 클로저 (지도 생성 2단계, 현행)
+
+| 받는 것 | 녹화 bag 안의 `/utlidar/cloud_deskewed`, `/utlidar/robot_odom` |
+| 내는 것 | 보정된 `scans.pcd` |
+| 의존 | open3d, rosbag2_py, sensor_msgs_py |
+
+증분 재적분 방식. 출발-도착 오차를 걸음 수에 비례해 나눠 배분해 국소
+모양을 보존합니다. **ICP `fitness ≥ 0.9` 일 때만 적용** — 낮으면
+`odom_map_build.py` 의 무보정 출력을 그대로 씁니다. v1(`loop_correct.py`,
+전역 나선 변환)은 회전 중심에서 먼 점을 크게 밀어내는 구조적 결함으로
+**폐기**됐습니다(참고용으로만 보관).
+
 ### `tools/robot_pose.py`
 
 | 받는 것 | `/aft_mapped_to_init`, `/indoor/health` |
@@ -143,7 +197,11 @@ pcd_save_en: true
 | 내는 것 | `results/*.npy`, `*.pgm`, `*.yaml`, `*_preview.png` |
 | 의존 | numpy, matplotlib |
 
-토픽을 쓰지 않는 오프라인 도구입니다.
+토픽을 쓰지 않는 오프라인 도구입니다. **입력 PCD 의 출처가 바뀌었습니다**
+— 이전엔 Point-LIO 가 실시간으로 저장한 것을, 지금은 `odom_map_build.py`
+→ `loop_correct_v2.py` 가 만든 것을 받습니다 (둘 다 같은 PCD 형식이라
+도구 자체는 그대로입니다). 2026-08-07 에 지면 추정 버그(최빈 bin 왼쪽 끝 →
+중앙)를 고쳤습니다.
 
 ### `tools/map_publisher.py`
 
@@ -191,6 +249,10 @@ tools/map_publisher.py
 tools/lio_tf.py
 ```
 
+**실시간 위치추정·주행용입니다.** 지도 생성에는 더 이상 쓰지 않습니다 —
+지도는 이 스크립트로 녹화한 bag 을 `odom_map_build.py` → `loop_correct_v2.py`
+→ `pcd_to_grid.py` 로 오프라인 처리해서 만듭니다.
+
 ---
 
 ## 3. ⚠ 상수 중복 — 고쳐야 할 것
@@ -232,7 +294,15 @@ R_BL = R_LB.T
 | numpy | 대부분 |
 | scipy | 부풀리기, 연결성 검사 |
 | matplotlib | `pcd_to_grid.py` 미리보기 |
+| open3d | `odom_map_build.py`, `loop_correct_v2.py` 등 점군 누적·루프클로저 도구 (2026-08-07 추가) |
+| rosbag2_py / sensor_msgs_py | bag 오프라인 직접 읽기 — `odom_map_build.py`, `loop_correct_v2.py`, `repro_*.py` (2026-08-07 추가) |
 | `~/setup_go2.sh` | 로봇 연결 (CycloneDDS 설정) |
 
 `setup_go2.sh` 는 저장소 밖(홈 디렉터리)에 있습니다. 새 PC 로 옮기실 때
 잊기 쉬우므로 `install_go2_lio.sh` 가 함께 복사합니다.
+
+**`point_lio_ros2`, `go2_description`, `unitree_ros2` 의 수정본은 이제
+`external/`(2026-08-08 신설)에 백업돼 있습니다.** `point_lio_ros2` 와
+`go2_description` 은 git 저장소가 아니라서, `setup_go2.sh` 는 직접 작성해
+원본에 없는 파일이라서 소실 시 복구가 불가능했던 것을 옮긴 것입니다. diff
+전문·복원 절차는 `external/README.md` 참고.
