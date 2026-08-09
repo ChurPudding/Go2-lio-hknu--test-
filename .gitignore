@@ -31,10 +31,11 @@ docs/QUESTIONS.md
 !docs/**/*.png
 
 # 지도 산출물 — bag 에서 재생성 가능
-results/*.npy
-results/*.pgm
-results/*.yaml
-results/odommap*/
-results/repro/
 !results/final/*
 .vscode/
+
+# 개인 저장소 방침: 격자·그림은 올리고 점군 원본만 제외
+*.pcd
+
+# bag 재생 진행 로그 — 30MB 씩, 내용 무의미
+results/**/bagplay.log
