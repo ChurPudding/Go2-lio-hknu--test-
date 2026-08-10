@@ -1,8 +1,44 @@
-# 점군·격자 원본 — 용량이 커서 저장소에 넣지 않는다
-*.pcd
-*.npy
-*.bak
-
-# 파이썬
+build/
+install/
+log/
+/src/
 __pycache__/
-*.pyc
+
+*.db3
+*.csv
+*.mp4
+*.gif
+*.pcd
+exp/
+videos/
+rviz/
+out_*/
+plio_*/
+go2_run*/
+rosbag2_*/
+traj_*/
+expA_*/
+
+*.png
+!results/*.png
+*.bak
+go2_outdoor_*/
+_deprecated/
+_deprecated/
+go2_corridor*/
+*.bak_*
+docs/QUESTIONS.md
+!docs/**/*.png
+
+# 지도 산출물 — bag 에서 재생성 가능
+!results/final/*
+.vscode/
+
+# 개인 저장소 방침: 격자·그림은 올리고 점군 원본만 제외
+*.pcd
+
+# bag 재생 진행 로그 — 30MB 씩, 내용 무의미
+results/**/bagplay.log
+
+# 격자 원본 배열 — pgm/yaml 로 재생성 가능
+*.npy
