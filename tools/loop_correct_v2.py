@@ -127,6 +127,8 @@ def main():
     ap.add_argument('--out', default=os.path.expanduser(
         '~/fastlio_ws/results/odommap_v2'))
     ap.add_argument('--plot-only', action='store_true')
+    ap.add_argument('--k', type=float, default=1.1995,
+                    help='다리 오도메트리 축척 보정계수. 1.0 이면 보정 없음')
     a = ap.parse_args()
     os.makedirs(a.out, exist_ok=True)
 
@@ -260,7 +262,7 @@ def main():
 
         # 이 시점의 (옛 자세 → 새 자세) 변환
         R = rot(TH2[i] - TH[i])
-        t = P2[i] - R @ P[i]
+        t = a.k * P2[i] - R @ P[i]
 
         arr = point_cloud2.read_points_numpy(m, field_names=('x', 'y', 'z'),
                                              skip_nans=True)
