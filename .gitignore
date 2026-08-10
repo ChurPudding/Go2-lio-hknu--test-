@@ -21,6 +21,7 @@ expA_*/
 
 *.png
 !results/*.png
+!results/**/*.png
 *.bak
 go2_outdoor_*/
 _deprecated/
