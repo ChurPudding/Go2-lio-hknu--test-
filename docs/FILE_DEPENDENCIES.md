@@ -1,7 +1,7 @@
 # 파일 의존 관계
 
 각 파일이 무엇을 받고 무엇에 기대는지 정리했습니다.
-갱신 2026-08-10 · 담당 효신
+갱신 2026-08-10(저녁) · 담당 효신
 
 > **2026-08-07 갱신**: 지도 생성 경로가 바뀌었습니다. Point-LIO 의
 > `PCD/scans.pcd` 대신 `odom_map_build.py` → `loop_correct_v2.py` 가 만든
@@ -16,64 +16,85 @@
 ```mermaid
 flowchart TD
     subgraph robot["로봇이 내보내는 것"]
-        C1["/utlidar/imu<br/>250 Hz · 자이로"]
+        C1["/utlidar/imu<br/>250 Hz · 자이로 (LiDAR 프레임)"]
         C2["/lowstate<br/>500 Hz · 가속도"]
-        C3["/utlidar/cloud<br/>15 Hz · 점군"]
-        C3D["/utlidar/cloud_deskewed<br/>15 Hz · odom 좌표계"]
-        C4["/utlidar/robot_odom<br/>150 Hz · 다리+몸통IMU 융합"]
+        C3["/utlidar/cloud<br/>15 Hz · 단일 프레임 · time 필드 있음"]
+        C3D["/utlidar/cloud_deskewed<br/>15 Hz · odom 좌표계 · 원본의 2.8배 누적"]
+        C4["/utlidar/robot_odom<br/>150 Hz · 다리+몸통IMU 융합<br/>거리 17% 짧음 · 회전은 정확"]
     end
 
-    CAL["tools/go2_calib.py<br/>외부 파라미터 상수"]
+    CAL["tools/go2_calib.py<br/>R_LB · R_BL · LEVER"]
 
-    %% 실시간 위치추정 · 주행 (현행, run_indoor.sh)
+    %% ---------- 실시간 위치추정 · 주행 (run_indoor.sh) ----------
     C1 --> BR["tools/l1_imu_fix.py"]
     C2 --> BR
-    CAL -.import.-> BR
+    CAL -.import R_LB.-> BR
     BR --> IMU["/l1_imu_fixed"]
-
     C3 --> LIO["mapping_unilidar_l1.launch.py<br/>외부 패키지 point_lio"]
     IMU --> LIO
     CFG["config/unilidar_l1.yaml<br/>백업: external/point_lio_config/"] -.읽음.-> LIO
-
     LIO --> AFT["/aft_mapped_to_init"]
     LIO --> REG["/cloud_registered"]
     LIO -.보류.-> PCDOLD["PCD/scans.pcd (Point-LIO)<br/>⏸ 드리프트 21.75%"]
-
     AFT --> RP["tools/robot_pose.py"]
     RP --> BP["/indoor/base_pose"]
-
     C4 --> HL["tools/lio_health.py"]
     BP --> HL
     HL --> HE["/indoor/health"]
     HE -.covariance.-> RP
-
     BP --> TF["tools/lio_tf.py"]
     HE --> TF
     TF --> TFT["/tf"]
 
-    %% 지도 생성 · bag 오프라인 (현행, 2026-08-07 전환)
-    subgraph mapping["지도 생성 · bag 오프라인 (현행)"]
-        BAG["녹화 bag<br/>cloud_deskewed + robot_odom"]
-        BAG --> OMB["tools/odom_map_build.py"]
-        OMB --> PCDNEW["PCD/scans.pcd<br/>다리 오도메트리 누적"]
-        PCDNEW --> LC2["tools/loop_correct_v2.py<br/>루프 클로저 · 증분 재적분"]
-        LC2 --> PCDCORR["scans.pcd (보정)<br/>fitness≥0.9 일 때만 적용"]
+    %% ---------- 축척계수 측정 (2026-08-10) ----------
+    subgraph calib["축척계수 측정 · 2026-08-10"]
+        SB["scale_0810_run1~3 (+_back)<br/>robot_odom 만 녹화"]
+        TAPE["타일 실측 51.83 m<br/>128칸 x 40cm + 63cm"]
+        SB --> SCK["tools/scale_check.py<br/>정지구간 자동검출 · 직선변위"]
+        TAPE --> SCK
+        SCK --> KK["k = 1.1995<br/>6회 · 편차 0.33 m<br/>전진·후진 차 0.37%"]
     end
+
+    %% ---------- 지도 생성 · bag 오프라인 ----------
+    subgraph mapping["지도 생성 · bag 오프라인 (현행)"]
+        BAG["녹화 bag (loop_0810_1)<br/>cloud_deskewed + robot_odom + cloud"]
+        BAG --> LC2["tools/loop_correct_v2.py --k<br/>bag 을 직접 읽는다<br/>루프 클로저 + 축척 보정"]
+        BAG -.루프보정 없이 · 진단용.-> OMB["tools/odom_map_build_v2.py<br/>오차가 그대로 보인다"]
+        LC2 --> PCDCORR["scans.pcd (보정)<br/>fitness≥0.9 일 때만 적용"]
+        OMB --> PCDNL["scans.pcd (무보정)"]
+    end
+
+    KK -.k 적용.-> LC2
+    KK -.k 적용.-> OMB
     C3D -.기록.-> BAG
     C4 -.기록.-> BAG
+    C3 -.기록 · 향후 디스큐용.-> BAG
 
-    PCDCORR --> P2G["tools/pcd_to_grid.py"]
+    PCDCORR --> P2G["tools/pcd_to_grid.py<br/>해상도 인자 0.10 또는 0.05"]
+    PCDNL -.진단.-> P2G
     PCDOLD -.보류.-> P2G
-    P2G --> MAP["results/indoor_map.pgm<br/>+ .yaml + .npy"]
+    P2G --> GRID["results/loop_0810/<br/>grid.pgm + .yaml + .npy<br/>grid005 = 0.05 m/cell (권장)"]
 
-    MAP --> MP["tools/map_publisher.py"]
-    MP --> MT["/indoor/map"]
+    %% ---------- 검증 (2026-08-10) ----------
+    subgraph verify["검증 · 2026-08-10"]
+        GRID --> MM["tools/map_measure.py<br/>두 점 클릭 거리 측정"]
+        MM --> MMR["실측 대비 0.1~5%<br/>벽 두께 약 0.17 m"]
+        BAG --> YC["tools/yaw_check.py<br/>다리 요 vs 자이로 적분 vs 내부융합"]
+        YC --> YCR["회전 정확도 회당 0.17도<br/>루프 폐쇄 0.58 m / 211.2 m = 0.27%"]
+    end
+    CAL -.import R_BL.-> YC
 
+    %% ---------- 배포 ----------
+    GRID --> MS["nav2_map_server<br/>lifecycle configure → activate"]
+    MS --> MT["/map · nav_msgs/OccupancyGrid<br/>QoS transient_local + reliable<br/>미관측 없음 — 건물 밖도 free"]
+    MT --> A["팀원A · A* / Nav2"]
+    GRID -.자체 발행 경로.-> MP["tools/map_publisher.py"]
+    MP --> MT2["/indoor/map"]
     BP --> NAV["tools/go2_nav_interface.py"]
     C3 --> NAV
-    MAP --> NAV
+    GRID --> NAV
     NAV --> OUT["/map /odom /scan /tf"]
-    OUT --> A["팀원A · Nav2"]
+    OUT --> A
 ```
 
 **읽는 법**: 위쪽(로봇 토픽 → `l1_imu_fix` → Point-LIO)은 실시간
