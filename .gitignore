@@ -21,8 +21,7 @@ expA_*/
 
 *.png
 !results/*.png
-!results/**/*.png
-*.bak
+!*.bak
 go2_outdoor_*/
 _deprecated/
 _deprecated/
@@ -43,3 +42,26 @@ results/**/bagplay.log
 
 # 격자 원본 배열 — pgm/yaml 로 재생성 가능
 *.npy
+
+# --- colcon 빌드 산출물 ---
+build/
+install/
+log/
+
+# --- 데이터 (용량) ---
+*.pcd
+*.db3
+*.npy
+*.bag
+
+# --- 캐시 ---
+__pycache__/
+*.pyc
+*.bak
+*.bak_*
+
+
+
+!results/**/*.png
+# 실외 5cm 격자만 제외 — 15cm 로 재생성 가능, 벌당 7MB
+results/outdoor_0812/grid_05/
