@@ -14,7 +14,11 @@ set +u
 RUN_NAME="${1:?사용법: ./repro_run.sh <실행이름> [간격초]}"
 GAP="${2:-3}"
 
-BAG="$HOME/data/bags/indoor/floor_0805_1720"
+BAG="${3:-$HOME/data/bags/indoor/floor_0805_1720}"
+# 3번째 인자로 bag 경로. /lowstate 가 없는 bag 은 ACC_TOPIC 을 지정한다.
+ACC_TOPIC="${4:-/lowstate}"
+# 필요한 토픽만 재생. 전체를 쏟으면 DDS 큐가 넘쳐 유실된다 (2026-08-10).
+TOPICS="/utlidar/cloud /utlidar/imu $ACC_TOPIC"
 PCD_SRC="$HOME/catkin_point_lio_unilidar/src/point_lio_ros2/PCD/scans.pcd"
 BRIDGE="$HOME/fastlio_ws/tools/l1_imu_fix.py"
 MONITOR="$HOME/fastlio_ws/tools/repro_monitor.py"
@@ -73,7 +77,7 @@ MON_PID=$!
 sleep 2
 
 echo "[3] T1 브리지(l1_imu_fix.py) 시작"
-python3 "$BRIDGE" > "$OUT/bridge.log" 2>&1 &
+python3 "$BRIDGE" --ros-args -p acc_topic:="$ACC_TOPIC" > "$OUT/bridge.log" 2>&1 &
 BRIDGE_PID=$!
 sleep 2
 
@@ -105,7 +109,7 @@ sleep "$GAP"
 # ------------------------------------------------------------- 4. bag 재생 ----
 echo "[5] T3 bag 재생 (-r 0.5) — 약 15분"
 T_START=$(date +%s)
-ros2 bag play "$BAG" -r 0.5 > "$OUT/bagplay.log" 2>&1
+ros2 bag play "$BAG" -r 0.5 --topics $TOPICS > "$OUT/bagplay.log" 2>&1
 T_END=$(date +%s)
 echo "    재생 완료: $((T_END - T_START))s"
 

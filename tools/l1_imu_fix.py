@@ -42,7 +42,7 @@ from rclpy.node import Node
 from rclpy.qos import (QoSProfile, HistoryPolicy, ReliabilityPolicy,
                        qos_profile_sensor_data)
 from sensor_msgs.msg import Imu
-from unitree_go.msg import LowState
+from unitree_go.msg import LowState, SportModeState
 
 # ---------------------------------------------------------------
 # 외부 파라미터는 go2_calib.py 한 곳에서만 관리한다.
@@ -63,6 +63,11 @@ class L1ImuFix(Node):
         self.declare_parameter('frame_id', 'utlidar_lidar')
         self.declare_parameter('acc_scale', float(ACC_SCALE_BODY))
         self.declare_parameter('rest_check', True)
+        # 가속도 출처 토픽. /lowstate(500Hz) 또는 /sportmodestate(289Hz).
+        # 두 토픽의 imu_state.accelerometer 는 같은 센서다
+        # (2026-08-10 확인: |a| 평균 9.4960 vs 9.4947, 축별 평균도 일치).
+        # bag 에 /lowstate 가 없을 때 대체용.
+        self.declare_parameter('acc_topic', '/lowstate')
 
         self.frame_id = self.get_parameter('frame_id').value
         self.acc_scale = float(self.get_parameter('acc_scale').value)
@@ -84,8 +89,10 @@ class L1ImuFix(Node):
         self.pub = self.create_publisher(Imu, out_topic, pub_qos)
 
         # 구독은 센서 데이터 프로파일 유지 (bag 재생이 녹화 당시 QoS 를 제공)
+        self.acc_topic = self.get_parameter('acc_topic').value
+        acc_cls = SportModeState if 'sportmode' in self.acc_topic else LowState
         self.create_subscription(
-            LowState, '/lowstate', self.on_lowstate, qos_profile_sensor_data)
+            acc_cls, self.acc_topic, self.on_lowstate, qos_profile_sensor_data)
         self.create_subscription(
             Imu, '/utlidar/imu', self.on_imu, qos_profile_sensor_data)
         self.create_timer(5.0, self.report)
@@ -94,6 +101,7 @@ class L1ImuFix(Node):
         log.info('l1_imu_fix started -> %s (RELIABLE, depth=200)' % out_topic)
         log.info('R_LB[0,0] = %+.6f   (기대값 +0.523029)' % R_LB[0, 0])
         log.info('acc_scale = %.5f' % self.acc_scale)
+        log.info('가속도 출처 = %s' % self.acc_topic)
         log.info('정지 시 기대 가속도 = (%+.2f, %+.2f, %+.2f)'
                  % tuple(EXPECTED_REST_ACC))
         if abs(R_LB[0, 0] - 0.523029) > 1e-6:
