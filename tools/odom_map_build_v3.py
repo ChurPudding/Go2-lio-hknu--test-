@@ -199,6 +199,10 @@ def main():
     ap.add_argument("--invert-extrinsic", action="store_true",
                     help="R_BL 방향이 반대일 때 사용")
     ap.add_argument("--no-scale", action="store_true", help="축척 보정 끄기")
+    ap.add_argument("--elev", action="store_true",
+                    help="피치 적분 고도를 z 에 넣는다. 다리 오도메트리의 "
+                         "position[2] 는 고도가 아니라 몸통 높이이므로 "
+                         "경사지에서 지도가 평면으로 눌리는 것을 막는다")
     args = ap.parse_args()
 
     k = 1.0 if args.no_scale else args.k
@@ -214,6 +218,27 @@ def main():
     cur = con.cursor()
     odo = load_odom(cur)
     print(f"odom       : {len(odo)} msgs, {odo[-1,0]-odo[0,0]:.1f} s")
+
+    elev = None
+    if args.elev:
+        import sqlite3 as _sq
+        SMS = get_message("unitree_go/msg/SportModeState")
+        _db = glob.glob(os.path.join(args.bag, "*.db3"))[0]
+        _c = _sq.connect(_db); _cu = _c.cursor()
+        _r = _cu.execute("SELECT id FROM topics WHERE name='/sportmodestate'").fetchone()
+        E = []
+        for _ts, _d in _cu.execute(
+                "SELECT timestamp,data FROM messages WHERE topic_id=? ORDER BY timestamp",
+                (_r[0],)):
+            _m = deserialize_message(_d, SMS)
+            E.append((_ts/1e9, _m.position[0], _m.position[1], _m.imu_state.rpy[1]))
+        _c.close()
+        E = np.array(E)
+        _ds = np.linalg.norm(np.diff(E[:, 1:3], axis=0), axis=1) * k
+        _pm = 0.5 * (E[1:, 3] + E[:-1, 3])
+        _z = np.concatenate([[0.0], np.cumsum(-np.sin(_pm) * _ds)])
+        elev = (E[:, 0], _z)
+        print(f"고도 보정   : Δz {_z[-1]:+.2f} m  (범위 {_z.min():+.2f}~{_z.max():+.2f})")
 
     cid = topic_id(cur, CLOUD_TOPIC)
     if cid is None:
@@ -252,7 +277,11 @@ def main():
         # body -> odom  (+ 축척 보정)
         R = quat_to_R(odo[i, 4], odo[i, 5], odo[i, 6], odo[i, 7])
         tv = odo[i, 1:4]
-        po = pb @ R.T + tv + (k - 1.0) * tv
+        tv2 = tv + (k - 1.0) * tv
+        if elev is not None:
+            tv2 = tv2.copy()
+            tv2[2] += float(np.interp(t, elev[0], elev[1]))
+        po = pb @ R.T + tv2
 
         acc.append(po)
         used += 1
