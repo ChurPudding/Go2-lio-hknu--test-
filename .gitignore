@@ -65,3 +65,6 @@ __pycache__/
 !results/**/*.png
 # 실외 5cm 격자만 제외 — 15cm 로 재생성 가능, 벌당 7MB
 results/outdoor_0812/grid_05/
+
+# Point-LIO 재현 실험 산출물 — 회차당 30~160MB, bag 에서 재생성 가능
+results/repro/
