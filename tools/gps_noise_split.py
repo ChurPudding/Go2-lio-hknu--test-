@@ -51,6 +51,16 @@ STR = get_message("std_msgs/msg/String")
 DEFAULT = os.path.expanduser("~/data/bags/outdoor/0812/gps_static_0812_1415")
 
 
+
+def _m_per_deg(lat_deg):
+    """위도별 1도당 미터. WGS84 근사 (Snyder).
+    이전 상수 110540/111320 은 위도 37도에서 각각 0.40%/0.12% 작았다."""
+    p = math.radians(lat_deg)
+    m_lat = 111132.92 - 559.82 * math.cos(2 * p) + 1.175 * math.cos(4 * p)
+    m_lon = 111412.84 * math.cos(p) - 93.5 * math.cos(3 * p)
+    return m_lat, m_lon
+
+
 def load_gps(bag_dir, require_fix=True):
     db = sorted(glob.glob(os.path.join(bag_dir, "*.db3")))
     if not db:
@@ -86,8 +96,9 @@ def load_gps(bag_dir, require_fix=True):
 
 def to_enu(g):
     lat0, lon0 = g[:, 1].mean(), g[:, 2].mean()
-    e = (g[:, 2] - lon0) * 111320.0 * math.cos(math.radians(lat0))
-    n = (g[:, 1] - lat0) * 110540.0
+    _MLAT, _MLON = _m_per_deg(lat0)
+    e = (g[:, 2] - lon0) * _MLON
+    n = (g[:, 1] - lat0) * _MLAT
     return np.column_stack([e, n])
 
 

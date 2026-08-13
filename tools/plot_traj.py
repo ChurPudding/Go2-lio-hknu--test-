@@ -39,6 +39,16 @@ OUTDIR = os.path.expanduser("~/data/bags/outdoor/0812/plots")
 # ----------------------------------------------------------------------
 # bag 읽기
 # ----------------------------------------------------------------------
+
+def _m_per_deg(lat_deg):
+    """위도별 1도당 미터. WGS84 근사 (Snyder).
+    이전 상수 110540/111320 은 위도 37도에서 각각 0.40%/0.12% 작았다."""
+    p = math.radians(lat_deg)
+    m_lat = 111132.92 - 559.82 * math.cos(2 * p) + 1.175 * math.cos(4 * p)
+    m_lon = 111412.84 * math.cos(p) - 93.5 * math.cos(3 * p)
+    return m_lat, m_lon
+
+
 def load_bag(d):
     """(odo, gps) 반환.  odo=[t,x,y,z,yaw]  gps=[t,lat,lon,hdop]"""
     db = glob.glob(os.path.join(d, "*.db3"))
@@ -80,8 +90,9 @@ def load_bag(d):
 def to_enu(gps):
     """위경도 -> 국소 ENU(m).  첫 fix 를 원점으로."""
     lat0, lon0 = gps[0, 1], gps[0, 2]
-    e = (gps[:, 2] - lon0) * 111320.0 * math.cos(math.radians(lat0))
-    n = (gps[:, 1] - lat0) * 110540.0
+    _MLAT, _MLON = _m_per_deg(lat0)
+    e = (gps[:, 2] - lon0) * _MLON
+    n = (gps[:, 1] - lat0) * _MLAT
     return np.column_stack([e, n])
 
 

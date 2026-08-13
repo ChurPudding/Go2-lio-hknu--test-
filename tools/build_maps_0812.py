@@ -77,6 +77,19 @@ CLOUD_TOPIC = "/utlidar/cloud"
 # ----------------------------------------------------------------------
 # GPS
 # ----------------------------------------------------------------------
+
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from go2_calib import K_OUTDOOR
+
+def _m_per_deg(lat_deg):
+    """위도별 1도당 미터. WGS84 근사 (Snyder).
+    이전 상수 110540/111320 은 위도 37도에서 각각 0.40%/0.12% 작았다."""
+    p = math.radians(lat_deg)
+    m_lat = 111132.92 - 559.82 * math.cos(2 * p) + 1.175 * math.cos(4 * p)
+    m_lon = 111412.84 * math.cos(p) - 93.5 * math.cos(3 * p)
+    return m_lat, m_lon
+
+
 def load_gps(cur):
     """fixed==1 인 것만.  [t, lat, lon, hdop]"""
     tid = topic_id(cur, "/gnss")
@@ -100,8 +113,9 @@ def load_gps(cur):
 def to_enu(gps, lat0=None, lon0=None):
     if lat0 is None:
         lat0, lon0 = gps[0, 1], gps[0, 2]
-    e = (gps[:, 2] - lon0) * 111320.0 * math.cos(math.radians(lat0))
-    n = (gps[:, 1] - lat0) * 110540.0
+    _MLAT, _MLON = _m_per_deg(lat0)
+    e = (gps[:, 2] - lon0) * _MLON
+    n = (gps[:, 1] - lat0) * _MLAT
     return np.column_stack([e, n]), lat0, lon0
 
 
@@ -284,7 +298,7 @@ def main():
     ap.add_argument("--grid-res", type=float, default=0.15,
                     help="격자 해상도 m.  pcd_to_grid 가 인자를 안 받으면 무시된다")
     ap.add_argument("--no-grid", action="store_true")
-    ap.add_argument("--k", type=float, default=1.1995, help="mode=none 의 고정 축척")
+    ap.add_argument("--k", type=float, default=K_OUTDOOR, help="mode=none 의 고정 축척")
     ap.add_argument("--sigma", type=float, default=30.0, help="warp 평활 시정수 초")
     ap.add_argument("--min-range", type=float, default=0.6)
     ap.add_argument("--max-range", type=float, default=40.0)

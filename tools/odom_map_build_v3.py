@@ -71,6 +71,9 @@ CLOUD_TOPIC = "/utlidar/cloud"
 ODOM_TOPIC = "/utlidar/robot_odom"
 
 
+sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
+from go2_calib import K_OUTDOOR
+
 def cloud_xyz(msg):
     """PointCloud2 -> (N,3) float64.  필드 datatype 이 섞여 있어도 동작한다."""
     off = {f.name: (f.offset, f.datatype) for f in msg.fields}
@@ -182,7 +185,7 @@ def main():
                     help="복셀 크기 m (실외 권장 0.15~0.25, 실내는 0.05)")
     ap.add_argument("out", nargs="?",
                     default=os.path.expanduser("~/fastlio_ws/results/outdoor_0812/scans.pcd"))
-    ap.add_argument("--k", type=float, default=1.1995, help="축척 보정 계수")
+    ap.add_argument("--k", type=float, default=K_OUTDOOR, help="축척 보정 계수 (기본 K_OUTDOOR)")
     ap.add_argument("--min-range", type=float, default=0.6,
                     help="이보다 가까운 점 제거 (로봇 몸통)")
     ap.add_argument("--max-range", type=float, default=40.0,

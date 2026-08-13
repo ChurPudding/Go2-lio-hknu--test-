@@ -9,6 +9,16 @@ BASE = os.path.expanduser("~/data/bags/outdoor/0812")
 SMS  = get_message('unitree_go/msg/SportModeState')
 STR  = get_message('std_msgs/msg/String')
 
+
+def _m_per_deg(lat_deg):
+    """위도별 1도당 미터. WGS84 근사 (Snyder).
+    이전 상수 110540/111320 은 위도 37도에서 각각 0.40%/0.12% 작았다."""
+    p = math.radians(lat_deg)
+    m_lat = 111132.92 - 559.82 * math.cos(2 * p) + 1.175 * math.cos(4 * p)
+    m_lon = 111412.84 * math.cos(p) - 93.5 * math.cos(3 * p)
+    return m_lat, m_lon
+
+
 def load(d):
     db = glob.glob(os.path.join(d, "*.db3"))
     con = sqlite3.connect(db[0]); cur = con.cursor()
@@ -30,8 +40,9 @@ def load(d):
 
 def enu(gps):
     lat0, lon0 = gps[0,1], gps[0,2]
-    E = (gps[:,2]-lon0) * 111320.0 * math.cos(math.radians(lat0))
-    N = (gps[:,1]-lat0) * 110540.0
+    _MLAT, _MLON = _m_per_deg(lat0)
+    E = (gps[:,2]-lon0) * _MLON
+    N = (gps[:,1]-lat0) * _MLAT
     return np.column_stack([E, N])
 
 def fit(src, dst, with_scale):
