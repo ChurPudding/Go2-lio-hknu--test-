@@ -1,6 +1,8 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+[python3 로 실행 — source 대상 아님]
+
 odom_scale_check.py — /utlidar/robot_odom 과 /lf/sportmodestate 의 스케일 검증
 
 무엇을 답하는가

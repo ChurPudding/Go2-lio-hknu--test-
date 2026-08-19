@@ -1,5 +1,8 @@
 #!/usr/bin/env python3
 """
+[모듈 — import 전용, source 대상 아님] python3 go2_calib.py 로 직접 실행하면
+자체 진단값만 출력합니다 (아래 __main__ 블록). 실제 사용은 항상 import 로.
+
 go2_calib.py -- Go2 + L1 외부 파라미터 공용 상수
 
 l1_imu_fix.py, robot_pose.py 가 이 모듈을 import 한다 (goto_node.py 는 미작성).

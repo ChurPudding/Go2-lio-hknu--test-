@@ -1,5 +1,7 @@
 #!/usr/bin/env python3
 """
+[python3 로 실행 — source 대상 아님]
+
 gnss_bridge.py — Go2 /gnss (JSON string) -> sensor_msgs/NavSatFix
 
 bag 재생만으로 검증 가능한 순수 변환 노드.

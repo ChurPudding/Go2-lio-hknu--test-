@@ -1,6 +1,9 @@
 #!/usr/bin/env python3
 # -*- coding: utf-8 -*-
 """
+[python3 로 실행 — source 대상 아님] 보통은 tools/run_outdoor_loc.sh 를
+통해 실행합니다 (TF 리매핑 인자를 거기서 고정해 두었습니다).
+
 localization_stub.py — 위치 추정 인터페이스 스텁 (1단계)
 
 무엇을 하는가
@@ -129,9 +132,14 @@ from tf2_msgs.msg import TFMessage
 sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
 try:
     from go2_calib import K_OUTDOOR as K_DEFAULT
-except ImportError:
-    K_DEFAULT = 1.23
-    print("[warn] go2_calib.py 를 찾지 못해 k=1.23 을 직접 씁니다.")
+except ImportError as e:
+    # k 값은 go2_calib.py 한 곳에서만 관리한다 (실측값이라 여기서 직접
+    # 적으면 go2_calib.py 가 바뀌어도 조용히 값이 어긋난다). 못 찾으면
+    # 기본값을 지어내는 대신 바로 실패한다.
+    raise ImportError(
+        "go2_calib.py 를 찾지 못했습니다. tools/go2_calib.py 가 이 파일과 "
+        "같은 폴더에 있는지 확인하세요."
+    ) from e
 
 
 class LocalizationStub(Node):
