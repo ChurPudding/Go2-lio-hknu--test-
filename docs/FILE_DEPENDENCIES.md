@@ -93,7 +93,7 @@ flowchart TD
     %% ---------- GTSAM 오프라인 검증 ----------
     T2 --> GTB["gtsam_batch_0812.py<br/>오프라인 배치 · Pose2 팩터그래프<br/>⚠ GPS 수치 실기 검증 전"]
     T3 --> GTB
-    GTB -.k 1.23 확인 · 추가확인 필요.-> CAL
+    GTB -.->|"k 1.23 확인 · 추가확인 필요"| CAL
 
     %% ---------- 축척 ----------
     KSRC["축척 k<br/>실내 1.1995 (줄자, 확정)<br/>실외 1.23 (GPS+GTSAM, ⚠ 실기 검증 전)"]
@@ -351,7 +351,7 @@ flowchart TD
 
     %% ---------- 2단계 사전검증 ----------
     BAGD["0812 bag<br/>foot_force/foot_force_est"] --> FFP["tools/foot_field_probe.py<br/>접지 판정 필드 오프라인 검증"]
-    FFP -.rho ≥ 0.9 여야 enable_slip 허용.-> LORD
+    FFP -.->|"rho ≥ 0.9 여야 enable_slip 허용"| LORD
 
     %% ---------- k 재검증 도구 ----------
     BAG5["5m 직진 bag · 줄자실측"] --> OSC["tools/odom_scale_check.py<br/>chord 기반 k"]
