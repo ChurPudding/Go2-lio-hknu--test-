@@ -1,7 +1,23 @@
 # 파일 의존 관계
 
 각 파일이 무엇을 받고 무엇에 기대는지 정리했습니다.
-갱신 2026-08-13(아침) · 담당 효신
+갱신 2026-08-22 · 담당 효신
+
+> **2026-08-13~19 갱신**: **실외 실시간 위치추정**이 새 네 번째 갈래(D)로
+> 생겼습니다. `localization_stub.py`(1단계, k 보정 `map→odom`)와
+> `leg_odom_refine.py`(2단계 실험, ZUPT·미끄럼배제·속도의존축척·방위보정을
+> 단계별로 켜고 끌 수 있는 노드)입니다. 지도 생성(C)과는 무관한 실시간
+> 경로입니다 — C 는 bag 오프라인으로 지도를 만들고, D 는 주행 중 좌표를
+> 냅니다. `go2_calib.py` 에 `K_INDOOR`/`K_OUTDOOR`(=1.23) 중복 정의 버그가
+> 있어 고쳤습니다. `gtsam_batch_0812.py` 오프라인 배치 최적화로 축척
+> k=1.23 을 재확인했고(다음 작업 1번 일부 완료), GPS 위치오차 σ=5 m 를
+> 실측으로 확정해 `gnss_bridge.py` 에 반영했습니다. 근거는
+> `docs/COMMIT_PLAN_0813.md`, `docs/INTERFACE_outdoor.md` 3.2절.
+>
+> ⚠ **GPS 관련 수치(k=1.23, σ=5 m 등)는 전부 bag 오프라인 재분석이며
+> 실기(로봇) 실시간 검증 전입니다 — 추가 확인 필요.** `gtsam_batch_0812.py`
+> 의 Huber·hdop 가중 파라미터도 08-13 결론과 아직 안 맞습니다
+> (`docs/COMMIT_PLAN_0813.md` "아직 안 한 것" 참고).
 
 > **2026-08-12 갱신**: 실외 경로가 새로 생겼습니다. 실외 bag 에는
 > `cloud_deskewed` 가 없어 `odom_map_build_v3.py` 가 원시 `/utlidar/cloud` 를
@@ -19,8 +35,11 @@
 
 ## 0. 통합 개요 — 실내·실외 한 장
 
-세 갈래가 있습니다. **실시간 위치추정**(Point-LIO), **실내 지도**, **실외
-지도**. 뒤의 둘은 입력 토픽 하나만 다르고 `pcd_to_grid.py` 부터 다시 합쳐집니다.
+네 갈래가 있습니다. **실시간 위치추정**(Point-LIO, 실내), **실내 지도**,
+**실외 지도**, 그리고 **실외 실시간 위치추정**(다리 오도메트리, 2026-08-13
+신설). 지도 두 갈래는 입력 토픽 하나만 다르고 `pcd_to_grid.py` 부터 다시
+합쳐집니다. D 는 지도를 만들지 않고 주행 중 좌표만 냅니다 — C(실외 지도)와는
+입력 토픽만 겹칠 뿐 서로 독립입니다.
 
 ```mermaid
 flowchart TD
@@ -32,14 +51,14 @@ flowchart TD
         T3["/gnss<br/>1 Hz · JSON · 실외만"]
     end
 
-    CAL["tools/go2_calib.py<br/>R_LB · R_BL · LEVER · k"]
+    CAL["tools/go2_calib.py<br/>R_LB · R_BL · LEVER<br/>K_INDOOR · K_OUTDOOR"]
 
-    %% ---------- A. 실시간 ----------
+    %% ---------- A. 실시간 (실내) ----------
     T4 --> BR["l1_imu_fix.py<br/>param acc_topic"]
     CAL -.R_LB.-> BR
     BR --> LIO["Point-LIO<br/>⚠ 실내 드리프트 21.75%"]
     T1 --> LIO
-    LIO --> RT["robot_pose → lio_health → lio_tf<br/>실시간 위치추정 · 주행"]
+    LIO --> RT["robot_pose → lio_health → lio_tf<br/>실내 실시간 위치추정 · 주행"]
 
     %% ---------- B. 실내 지도 ----------
     T1D --> IN["odom_map_build_v2.py<br/>좌표변환 불필요<br/>이미 odom 좌표계"]
@@ -53,20 +72,40 @@ flowchart TD
     OUT --> BM["build_maps_0812.py<br/>none / rigid / warp"]
     T3 --> BM
 
-    %% ---------- 합류 ----------
+    %% ---------- 합류 (B+C) ----------
     LC --> PCD["scans.pcd"]
     BM --> PCD
     PCD --> P2G["pcd_to_grid.py<br/>실내 0.05 · 실외 0.15 m"]
     P2G --> GRID["map.pgm + map.yaml"]
     GRID --> NAV["nav2_map_server<br/>go2_nav_interface.py<br/>→ 팀원A"]
 
+    %% ---------- D. 실외 실시간 위치추정 (2026-08-13 신설) ----------
+    T2 --> STUB["localization_stub.py<br/>1단계 · k 보정만"]
+    CAL -.K_OUTDOOR.-> STUB
+    STUB --> HKNU["/hknu/robot_pose · /hknu/robot_odom<br/>map→odom TF<br/>→ 팀원A(경로계획)"]
+
+    T2 --> LOR["leg_odom_refine.py<br/>2단계 실험 · 4단 on/off"]
+    T2B["/sportmodestate · /lowstate<br/>발 힘/속도 · 2단(미끄럼)용"] -.선택.-> LOR
+    CAL -.KX_A/B · KY_A/B.-> LOR
+    HDG["heading_topic (선택)<br/>gps_heading.py"] -.4단.-> LOR
+    LOR --> LEGO["leg_odom · leg_odom_info<br/>TF 미발행 — 실험용, 아직 대체 전"]
+
+    %% ---------- GTSAM 오프라인 검증 ----------
+    T2 --> GTB["gtsam_batch_0812.py<br/>오프라인 배치 · Pose2 팩터그래프<br/>⚠ GPS 수치 실기 검증 전"]
+    T3 --> GTB
+    GTB -.k 1.23 확인 · 추가확인 필요.-> CAL
+
     %% ---------- 축척 ----------
-    KSRC["축척 k ≈ 1.20<br/>줄자 1.1995<br/>GPS 1.1910 / 1.2327"]
+    KSRC["축척 k<br/>실내 1.1995 (줄자, 확정)<br/>실외 1.23 (GPS+GTSAM, ⚠ 실기 검증 전)"]
     KSRC -.위치에만 적용.-> IN
     KSRC -.위치에만 적용.-> OUT
+    KSRC -.위치에만 적용.-> STUB
+    KSRC -.위치에만 적용.-> LOR
 
     style LIO stroke-dasharray: 4 4
     style RT stroke-dasharray: 4 4
+    style LOR stroke-dasharray: 4 4
+    style LEGO stroke-dasharray: 4 4
 ```
 
 ### 실내 vs 실외 — 무엇이 다른가
@@ -77,7 +116,7 @@ flowchart TD
 | **좌표 변환** | 불필요 (이미 odom) | `R_BL` + `LEVER` 2단계 |
 | **모션 보정** | 되어 있음 | **안 됨** — 급회전 시 밀림 |
 | **누적 도구** | `odom_map_build_v2.py` | `odom_map_build_v3.py` |
-| **축척 출처** | 줄자 실측 1.1995 (고정) | GPS 정렬 (bag 마다) |
+| **축척 출처** | `go2_calib.K_INDOOR` = 1.1995 (줄자, 고정) | `go2_calib.K_OUTDOOR` = 1.23 (GPS+GTSAM, ⚠ 실기 검증 전) |
 | **드리프트 보정** | `loop_correct_v2.py` (ICP) | GPS `rigid`/`warp` |
 | **좌표계** | odom (부팅 기준) | **ENU** (북쪽 위, 웨이포인트와 동일) |
 | **격자 해상도** | 0.05 m | 0.15 m |
@@ -93,16 +132,20 @@ flowchart TD
 | 기준 산출물 | `results/loop_0810/grid005` | `results/outdoor_0812/grid_15/loop1_0812_1449_warp` |
 | Point-LIO 비교 | 21.75% (⚠ 미해결) | 미실행 |
 
-### 세 갈래의 관계
+### 네 갈래의 관계
 
-- **A(실시간)** 는 지도 생성에 쓰지 않습니다. 주행 중 위치추정 전용입니다.
+- **A(실시간·실내)** 는 지도 생성에 쓰지 않습니다. 주행 중 위치추정 전용입니다.
   Point-LIO 의 실내 드리프트 21.75% 는 원인 미규명 상태로 **보류**입니다.
-- **B(실내)** 는 완료됐습니다. 파이프라인·파라미터 모두 확정.
-- **C(실외)** 가 현행 주력입니다. 대회 코스가 실외 GPS 웨이포인트이므로
-  여기에 GTSAM + GPS factor 를 얹는 것이 다음 단계입니다.
+- **B(실내 지도)** 는 완료됐습니다. 파이프라인·파라미터 모두 확정.
+- **C(실외 지도)** 는 대회 코스처럼 GPS 웨이포인트만 있으면 지도가 굳이
+  필요 없어, 현재는 D 가 주력이고 C 는 참고 자료로 남아 있습니다.
+- **D(실외 실시간 위치추정)** 이 현행 주력입니다. 2026-08-13 1단계
+  (`localization_stub.py`, k 보정만)로 시작해, 08-19 2단계 실험
+  (`leg_odom_refine.py`)까지 왔습니다. 아직 GPS 앵커링(2단계)·GTSAM
+  실시간화(3단계) 전이라 **웨이포인트 주행은 안 됩니다** (1-C절 참고).
 
-세 갈래 모두 `go2_calib.py` 의 외부 파라미터에 의존합니다. **라이다를 다시
-장착하거나 재교정하면 세 갈래가 한꺼번에 영향을 받습니다.**
+네 갈래 모두 `go2_calib.py` 의 외부 파라미터에 의존합니다. **라이다를 다시
+장착하거나 재교정하면 네 갈래가 한꺼번에 영향을 받습니다.**
 
 ---
 
@@ -274,6 +317,72 @@ GPS 보정(`rigid`/`warp`)은 **폐루프 경로에만** 유효합니다. 편도
 
 ---
 
+## 1-C. 전체 흐름 — 실외 실시간 위치추정 (2026-08-13~19 신설)
+
+C(실외 지도)는 bag 을 오프라인으로 읽어 지도를 만듭니다. D 는 그와 무관하게
+**주행 중** `/utlidar/robot_odom` 을 실시간으로 보정해 좌표를 냅니다.
+현재 1단계와 2단계(실험)가 함께 존재합니다 — 아직 서로 대체 관계가 아니라
+1단계가 기본이고, 2단계는 검증 중인 노드입니다.
+
+```mermaid
+flowchart TD
+    subgraph robotD["실외 실시간 입력"]
+        D1["/utlidar/robot_odom<br/>150 Hz · 다리+몸통IMU 융합"]
+        D2["/sportmodestate<br/>~50 Hz · 발 힘/속도 추정용"]
+        D3["/lowstate<br/>~500 Hz · 발 힘/속도 추정용"]
+        D4["heading_topic (선택)<br/>gps_heading.py 출력 · deg"]
+    end
+
+    CALD["tools/go2_calib.py<br/>K_OUTDOOR=1.23<br/>KX_A/B · KY_A/B (속도의존, 미측정=0)"]
+
+    %% ---------- 1단계 ----------
+    D1 --> STUBD["tools/localization_stub.py<br/>1단계 · k 만 곱함"]
+    CALD -.K_OUTDOOR.-> STUBD
+    STUBD --> TFD["/tf: map→odom<br/>(TF 충돌 감시 2초)"]
+    STUBD --> HKNUD["/hknu/robot_odom<br/>/hknu/robot_pose<br/>→ 팀원A(경로계획)"]
+
+    %% ---------- 2단계 (실험) ----------
+    D1 --> LORD["tools/leg_odom_refine.py<br/>0단 Δ추출(항상)<br/>1단 ZUPT · 2단 미끄럼배제<br/>3단 속도의존축척 · 4단 방위보정"]
+    D2 -.2단 접지판정.-> LORD
+    D3 -.2단 접지판정.-> LORD
+    D4 -.4단, 기본 꺼짐.-> LORD
+    CALD -.KX/KY.-> LORD
+    LORD --> LEGOD["leg_odom · leg_odom_info<br/>⏸ TF 미발행 · 실기 미검증"]
+
+    %% ---------- 2단계 사전검증 ----------
+    BAGD["0812 bag<br/>foot_force/foot_force_est"] --> FFP["tools/foot_field_probe.py<br/>접지 판정 필드 오프라인 검증"]
+    FFP -.rho ≥ 0.9 여야 enable_slip 허용.-> LORD
+
+    %% ---------- k 재검증 도구 ----------
+    BAG5["5m 직진 bag · 줄자실측"] --> OSC["tools/odom_scale_check.py<br/>chord 기반 k"]
+    OSC -.검증.-> CALD
+    BAGSV["속도대별 bag"] --> SVS["tools/scale_vs_speed.py<br/>k 의 속도의존성"]
+    SVS -.KX_B/KY_B 채움 (미측정).-> CALD
+
+    style LORD stroke-dasharray: 4 4
+    style LEGOD stroke-dasharray: 4 4
+```
+
+**읽는 법**: `localization_stub.py`(1단계)가 지금 실제로 쓰는 유일한 실시간
+출력입니다 — `/hknu/robot_pose`, `/hknu/robot_odom`, `map→odom` TF. k=1.23 을
+곱할 뿐 절대 위치·방위는 고정하지 않아 **부팅 지점이 원점**입니다(GPS
+웨이포인트를 아직 못 씀). `leg_odom_refine.py`(2단계)는 그 자리를 대체할
+후보 노드로, 기본 파라미터로 돌리면 1단계와 수치적으로 동일하게 나오도록
+설계됐습니다(회귀 없음 보장). **TF 는 전혀 발행하지 않으며**, `enable_slip`
+은 `foot_field_probe.py` 검증 전까지 반드시 `False` 로 둡니다.
+
+`run_outdoor_loc.sh`(1단계용)와 `run_leg_odom.sh`(2단계용)가 TF 리매핑
+(`__ns:=/hknu`, `/tf`·`/tf_static` 은 전역 유지)을 고정해 실행 실수를
+막습니다. **실내(`run_indoor.sh`)와 동시에 띄우면 안 됩니다** — 둘 다
+`map→odom` 을 발행합니다.
+
+> ⚠ **GPS 로 얻은 값(K_OUTDOOR=1.23, gnss_bridge σ=5 m, GTSAM 팩터
+> 파라미터)은 전부 bag 재분석 결과이고 로봇 실기·실시간 검증 전입니다.**
+> 앞으로 새 실외 bag 을 딸 때마다 `odom_scale_check.py`/`gtsam_batch_0812.py`
+> 로 다시 확인하십시오. 노면(특히 눈)이 바뀌면 k 도 다시 잽니다.
+
+---
+
 ## 2. 파일별 의존
 
 ### `tools/go2_calib.py` — 외부 파라미터 상수
@@ -288,8 +397,17 @@ GPS 보정(`rigid`/`warp`)은 **폐루프 경로에만** 유효합니다. 편도
 | `ACC_REST_BODY` | 9.465 | 정지 시 본체 IMU 가속도 크기 |
 | `ACC_SCALE_BODY` | 1.03614 | 9.807 / 9.465 |
 | `EXPECTED_REST_ACC` | (1.66, −1.90, −9.48) | 정지 시 라이다 프레임 기대 가속도 |
+| `K_INDOOR` | 1.1995 | 실내 축척 (줄자 실측, 고정) |
+| `K_OUTDOOR` | 1.23 | 실외 축척 (GPS+GTSAM, ⚠ 실기 검증 전) |
+| `KX_A, KX_B` | (1.23, 0.0) | `leg_odom_refine.py` 3단 · 전진방향 속도의존 축척. B=0 이면 K_OUTDOOR 과 동일 |
+| `KY_A, KY_B` | (1.23, 0.0) | 같음 · 횡방향. `scale_vs_speed.py` 로 B 를 채울 것(미측정) |
 
 **이 값들을 바꾸면 아래 절의 중복 문제를 먼저 해결해야 합니다.**
+
+> **2026-08-13 갱신**: `K_INDOOR`/`K_OUTDOOR` 블록이 주석까지 통째로
+> 두 번 정의돼 있던 버그를 고쳤습니다(위쪽만 고치면 아래쪽이 조용히
+> 덮어쓰는 구조였음). `build_maps_0812.py`, `odom_map_build_v3.py` 의
+> `--k` 기본값도 이제 하드코딩 대신 `K_OUTDOOR` 을 직접 import 합니다.
 
 ### `tools/l1_imu_fix.py`
 
@@ -310,6 +428,14 @@ L1 내부 IMU 는 164.9° 기울어 장착돼 있어 그대로 쓰면 중력 방
 > 는 **같은 센서**입니다(2026-08-10 확인: |a| 평균 9.4960 vs 9.4947, 축별
 > 평균도 일치). bag 에 `/lowstate` 가 없을 때 대체용입니다. WiFi 대역폭이
 > 빠듯해 `/lowstate` 를 빼고 녹화한 경우가 여기 해당합니다.
+
+> **2026-08-18 재검증 (실험 1~4)**: `exp1_gravity_record.py`(정지 중력방향),
+> `exp2_motion_record.py`(직진·회전 상관계수)로 이 파일의 `R_LB` 회전과
+> `ACC_SCALE_BODY` 를 다시 확인했습니다. 결론은 기존 상수와 동일 — 값은
+> 바뀌지 않았고 근거만 보강됐습니다. 실험 4(`실험4_오도메트리신뢰도_결과.md`)
+> 는 odom 자체의 내부 일관성(위치 미분 vs twist)을 점검해, 향후 odom 을
+> "정답지"로 쓰는 실험(3단계 leg_odom_refine 검증 등)의 전제를 뒷받침합니다.
+> 결과 문서: `docs/실험1_정지중력방향_결과.md` ~ `실험4_오도메트리신뢰도_결과.md`.
 
 ### `mapping_unilidar_l1.launch.py` — 외부 패키지
 
@@ -379,8 +505,9 @@ p_odom = R_odom(t) · p_body + t_odom(t)
 
 축척 보정은 v2 와 동일합니다(위치에만 적용).
 
-주요 인자: `voxel`(실외 권장 0.15), `--k`(기본 1.1995), `--min-range` 0.6,
-`--max-range` 40, `--stride`, `--max-dt` 0.05, `--invert-extrinsic`.
+주요 인자: `voxel`(실외 권장 0.15), `--k`(기본 `go2_calib.K_OUTDOOR`=1.23),
+`--min-range` 0.6, `--max-range` 40, `--stride`, `--max-dt` 0.05,
+`--invert-extrinsic`.
 
 > ⚠ 원시 `cloud` 는 **모션 보정(deskew)이 안 되어 있습니다.** 회전이 빠르면
 > 스캔이 밀립니다. 0812 폐루프는 제자리 회전을 피하고 호를 그리며 돌아
@@ -405,7 +532,7 @@ from odom_map_build_v3 import cloud_xyz, get_extrinsic, load_odom, \
 
 | 방식 | 하는 일 | 좌표계 | 축척 출처 |
 |---|---|---|---|
-| `none` | 고정 k 만 적용 | odom (부팅 기준) | `--k` 기본 1.1995 |
+| `none` | 고정 k 만 적용 | odom (부팅 기준) | `--k` 기본 `go2_calib.K_OUTDOOR`(=1.23, 2026-08-13부터 하드코딩 아님) |
 | `rigid` | GPS ENU 에 상사변환 1회 (yaw·축척·평행이동) | **ENU** | 그 bag 의 GPS |
 | `warp` | rigid + 잔차를 σ초 가우시안으로 평활해 더함 | **ENU** | 그 bag 의 GPS |
 
@@ -419,6 +546,157 @@ from odom_map_build_v3 import cloud_xyz, get_extrinsic, load_odom, \
 
 > GPS fix 가 20개 미만이면 `rigid`/`warp` 는 자동으로 건너뜁니다
 > (slope_out_1403 은 `fixed:0` 뿐이라 `none` 만 생성됨).
+
+### `tools/gtsam_batch_0812.py` — 오프라인 배치 팩터그래프 (2026-08-13 신설)
+
+```python
+from go2_calib import K_OUTDOOR
+```
+
+| 받는 것 | bag 안의 `/utlidar/robot_odom`, `/gnss` |
+| 내는 것 | `results/outdoor_0812/gtsam/<bag>_gtsam.png`, `_poses.npz` |
+| 의존 | **`go2_calib.py`**, **gtsam**(`pip3 install gtsam`), numpy |
+
+`build_maps_0812.py` 의 `rigid`(전역 상사변환 1회) / `warp`(사람이 정한
+평활 세기)를 대신해, 두 센서의 신뢰도(sigma)로 최적점을 계산합니다.
+
+- 변수: `Pose2(x, y, theta)` — GPS 시각마다 하나(1 Hz, 약 320개). **3D 가
+  아닌 이유**는 다리 오도메트리 z 가 고도가 아니고 GPS 고도 필드도 없어서,
+  관측 없는 변수를 넣으면 최적화가 불안정해지기 때문입니다.
+- 팩터: `BetweenFactorPose2`(오도메트리 증분), `PriorFactorPose2`(GPS 위치,
+  GTSAM 의 `GPSFactor` 가 Pose3 전용이라 이 방식을 씀), 첫 자세 프라이어.
+- GPS 팩터에 Huber(1.345) 로버스트 — 0812 정지 실측에서 GPS 오차가 연속
+  표류가 아니라 계단형 점프로 나타났기 때문입니다.
+- k 를 스윕해 GPS 잔차가 최소인 지점을 찾음 → **k=1.23 확정**(실내 줄자
+  1.1995, GPS 정렬 1.1910/1.2327 과 함께 교차검증).
+
+> ⚠ **Huber·hdop 가중 파라미터가 08-13 GPS 재분석 결론과 아직 안 맞습니다.**
+> hdop 가중은 폐기해야 하고(hdop 가 오차의 예측자가 아니었음, 아래
+> `gnss_bridge.py` 참고), Huber δ 를 7.5 m 로 원하면 정규화 잔차 기준
+> 1.5 를 넣어야 합니다(현재 1.345). `docs/COMMIT_PLAN_0813.md` "아직 안
+> 한 것" 참고 — 실시간 코드로 옮기기 전에 고칠 것.
+
+### `tools/localization_stub.py` — 실외 위치추정 1단계 (2026-08-13 신설)
+
+```python
+from go2_calib import K_OUTDOOR as K_DEFAULT
+```
+
+| 받는 것 | `/utlidar/robot_odom` |
+| 내는 것 | `/hknu/robot_odom`(`nav_msgs/Odometry`), `/hknu/robot_pose`(`PoseWithCovarianceStamped`), `/tf`(`map→odom`) |
+| 의존 | **`go2_calib.py`**(못 찾으면 즉시 실패 — 기본값을 지어내지 않음), tf2_ros |
+| 실행 | `tools/run_outdoor_loc.sh` (TF 리매핑 고정) |
+
+`/hknu` 네임스페이스 밑에 상대 이름으로 발행하고 실행 시 `__ns:=/hknu` 를
+씌웁니다. `map→odom` 을 매 프레임 `(k-1)·p` 로 계산해 축척 오차를
+상쇄합니다(회전은 그대로 — 축척의 영향을 받지 않음). z 는 축척을 곱하지
+않고 그대로 통과(고도가 아니므로).
+
+**하지 않는 것**: 절대 위치·방위 고정(부팅 지점이 원점, GPS 웨이포인트로
+못 바꿈), IMU yaw 표류 보정, 루프 폐합·GPS 융합·지도 작성.
+
+발행 전 2초간 `/tf` 를 엿들어 같은 연결선(`map→odom`)의 주인이 이미
+있는지 확인하는 **TF 충돌 감시**가 있습니다(`tf_guard` 파라미터). 그래도
+실행 순서에 따라 빠져나갈 수 있어 `ros2 run tf2_tools view_frames` 로
+직접 확인하는 편이 안전합니다.
+
+**실내(`go2_nav_interface.py`)와 동시에 띄우지 마십시오** — 둘 다
+`map→odom` 을 발행합니다.
+
+### `tools/leg_odom_refine.py` — 다리 오도메트리 증분 보정 (2단계 실험, 2026-08-19 신설)
+
+```python
+from go2_calib import KX_A, KX_B, KY_A, KY_B
+```
+
+| 받는 것 | `/utlidar/robot_odom`(필수), `/sportmodestate`·`/lowstate`(2단용, 선택), `heading_topic`(4단용, 선택, 기본 꺼짐) |
+| 내는 것 | `leg_odom`(`nav_msgs/Odometry`), `leg_odom_info`(`std_msgs/String` JSON) |
+| 의존 | **`go2_calib.py`**, `foot_field_probe.py` 로 2단 사전검증 필요 |
+| 실행 | `tools/run_leg_odom.sh` |
+
+`localization_stub.py` 의 스칼라 k 곱셈을 프레임 간 **증분(Δ)** 단위로
+다시 짜서 네 단계를 독립적으로 켜고 끌 수 있게 한 실험 노드입니다.
+
+| 단계 | 내용 | 기본값 |
+|---|---|---|
+| 0단 | Δ 추출(절대 위치 → body 프레임 증분) | 항상 켬 |
+| 1단 | ZUPT — 정지 중 Δ=0 | `enable_zupt=False` |
+| 2단 | 미끄럼배제 — 발 힘/속도로 접지 신뢰도 가중 | `enable_slip=False` |
+| 3단 | 속도의존 축척 `k_x(v)=KX_A+KX_B·v`, `k_y(v)` | `enable_scale=True`, B=0 |
+| 4단 | 방위 보정 — 외부 heading 으로 yaw 대체 | `enable_heading=False` |
+
+**회귀 없음 보장**: 기본 파라미터(1·2·4단 꺼짐, `kx_b=ky_b=0`)로 돌리면
+이 노드의 출력은 `localization_stub.py` 와 수치적으로 같습니다(누적
+시작점을 첫 메시지 위치에 `k` 를 미리 곱해 anchor 로 잡아 텔레스코핑이
+성립하도록 설계).
+
+**하지 않는 것**: `/tf` 를 전혀 발행하지 않습니다(TF 소유권은
+`localization_stub.py`). z 축에 축척을 곱하지 않습니다. twist 에 k 를
+중복으로 곱하지 않도록(기존 `localization_stub.py` 의 `k²` 버그로 보이는
+부분을 이 노드는 재계산으로 피함) 위치의 시간미분으로 twist 를 다시
+채웁니다.
+
+> ⏸ **`enable_slip` 은 `foot_field_probe.py` 결과가 나오기 전까지 반드시
+> `False` 로 둡니다.** `foot_speed_body` 필드는 이 저장소에서 검증된 적이
+> 없습니다.
+
+> Go2 가 내는 세 토픽(`robot_odom`, `lowstate`, `sportmodestate`)은 전부
+> `qos_profile_sensor_data`(BEST_EFFORT)로 구독합니다 — `survey_topics.py`
+> 에서 겪은 QoS 이중 구독 버그(BEST_EFFORT 발행자에 RELIABLE 로 구독하면
+> 콜백이 조용히 안 불림) 때문입니다.
+
+### `tools/foot_field_probe.py` — 접지 판정 필드 사전검증 (2026-08-19 신설)
+
+| 받는 것 | bag 안의 `/lowstate`(`foot_force`/`foot_force_est`), `/sportmodestate`(`foot_speed_body`), `/utlidar/robot_odom` |
+| 내는 것 | 표준출력 — `rho = corr(발 속도로 계산한 몸통 속도, robot_odom twist)` |
+| 의존 | numpy. **rclpy 노드 아님** — bag 오프라인 스크립트 |
+
+`leg_odom_refine.py` 2단(미끄럼배제)을 켜기 전 필수 절차입니다. 판정 기준은
+L1 라이다 가속도계를 기각할 때 쓴 것과 동일: `rho ≥ 0.9` 면 2단 진행,
+`rho < 0.9` 면 2단 영구 폐기(그때 L1 가속도계는 `rho=0.19` 로 기각).
+
+기본 bag 은 `scale_vs_speed.py` 와 동일한 `go2_loop1_0812_1449`.
+
+### `tools/odom_scale_check.py` — 축척계수 k 재검증, chord 기반 (2026-08-13 신설)
+
+| 받는 것 | 정지→직진→정지 bag 의 `/utlidar/robot_odom`, `/sportmodestate` |
+| 내는 것 | 표준출력 — 두 소스 일치 여부, `--truth <m>` 주면 k = 실측/측정 |
+| 의존 | numpy |
+
+경로장(path length)은 보행 진동이 그대로 더해져 과대평가되므로, 시작-끝
+**직선거리(chord)** 로 잽니다. 시작·끝 각 2초 이상 정지 구간의 평균 위치를
+씁니다(`--settle` 로 조절). k 를 다시 잴 때 표준 절차:
+
+```bash
+python3 tools/odom_scale_check.py <5m_직진_bag> --truth 5.00
+```
+
+### `tools/scale_vs_speed.py` — 축척계수의 속도 의존성 (2026-08-13 신설)
+
+| 받는 것 | bag 안의 `/sportmodestate`, `/gnss` |
+| 내는 것 | 구간별 GPS/오도 변위비 vs 속도 |
+| 의존 | numpy |
+
+`leg_odom_refine.py` 3단(`KX_B`, `KY_B`)을 채우기 위한 실측 도구입니다.
+K_OUTDOOR 이 GPS 정렬마다 1.1910~1.2327 로 흩어지는 것이 속도 의존성 때문일
+가능성을 조사합니다. **현재 미측정** — `go2_calib.py` 의 `KX_B=KY_B=0` 은
+이 도구의 결과를 아직 반영하지 않은 상태입니다.
+
+### `tools/elev_from_pitch.py` — IMU 피치 적분 고도 추정 (2026-08-13 신설)
+
+| 받는 것 | bag 안의 `/sportmodestate`(위치·이동거리), `/lowstate`(`imu_state.rpy[1]` 피치) |
+| 내는 것 | `results/outdoor_0812/figs/elev_from_pitch.png` 등 — 추정 고도 변화 |
+| 의존 | numpy, matplotlib |
+
+4장의 "다리 오도메트리 z 는 고도가 아니다" 문제에 대한 실험적 해법입니다.
+피치는 중력 기준이라 표류가 없으므로(yaw 는 분당 2~5° 표류하지만 roll·pitch
+는 가속도계가 계속 중력 방향을 봄), `dz = Σ sin(pitch_i)·ds_i` 로 고도
+변화를 근사합니다(`ds` 는 축척 k 적용된 오도메트리 이동거리).
+
+> ⚠ **전제 미검증**: "몸통 피치 == 지면 경사"가 성립해야 합니다. 제어기가
+> 몸통을 수평으로 유지하려 들면 경사에서도 피치가 0 에 가깝게 나와 이 방법이
+> 무너집니다. 평지 폐루프(`loop1_1449`)에서 `dz~0` 이 나오는지가 1차 판정
+> 기준입니다.
 
 ### `tools/gps_align_0812.py` — GPS↔오도메트리 정렬 분석 (2026-08-12)
 
@@ -473,13 +751,13 @@ GPS(ENU)와 오도메트리를 정렬해 겹쳐 그립니다. 파랑이 매끄�
 `view3d.py --mode overlay` 가 `none`/`rigid`/`warp` 정렬 비교에 가장
 유용합니다.
 
-### `tools/gnss_bridge.py` — JSON → NavSatFix (현재 미사용)
+### `tools/gnss_bridge.py` — JSON → NavSatFix (현재 미사용, 2026-08-13 공분산 재계산)
 
 | 받는 것 | `/gnss` (`std_msgs/String`, JSON) |
-| 내는 것 | `sensor_msgs/NavSatFix` |
+| 내는 것 | **`/fix`**(`sensor_msgs/NavSatFix`) — 2026-08-13 이전에는 `/gps/fix` |
 
-**0812 실외 분석에서는 쓰지 않았습니다.** 위 스크립트들이 bag 에서 JSON 을
-직접 파싱합니다. **GTSAM 단계에서 표준 메시지가 필요해지면** 이 브리지를
+**여전히 0812/오프라인 분석에서는 쓰지 않습니다.** 아래 스크립트들이 bag 에서
+JSON 을 직접 파싱합니다. **GTSAM 이 실시간으로 옮겨갈 때** 이 브리지를
 쓰게 됩니다.
 
 `/gnss` JSON 필드: `fixed`(0/1), `hdop`, `latitude`, `longitude`,
@@ -488,6 +766,45 @@ GPS(ENU)와 오도메트리를 정렬해 겹쳐 그립니다. 파랑이 매끄�
 > ⚠ **`fixed:1` 만으로 부족합니다.** 콜드 스타트 중에는 `fixed:0` 이면서
 > 마지막으로 잡았던 좌표를 그대로 들고 있습니다(0812 실측: 9일 전 좌표와
 > timestamp). `satellite_inuse ≥ 4` 와 **timestamp 갱신**을 함께 확인하십시오.
+
+> **2026-08-13 갱신 — 공분산 산출 방식 변경**: `sigma_h = hdop * UERE`
+> 대신 `UERE=4.0` 로 hdop≈1.2 기준 σ≈5 m 가 되도록 맞췄습니다(`SIGMA_MIN`
+> 2.0 / `SIGMA_MAX` 25.0 으로 클램프). `gps_vs_odom.py` 분석에서 hdop 가
+> 위치오차의 예측자가 아니었기 때문입니다(스파이크 구간 잔차 1.59 m <
+> 정상 구간 2.15 m). **함께 발견한 버그**: `max_hdop` 기본값이 5.0 이라
+> hdop 5.10 스파이크 구간이 통째로 `STATUS_NO_FIX` 로 버려지고 있었습니다
+> (잔차가 가장 작았던 샘플을 σ=1000 m 취급한 셈) — 20.0 으로 올렸습니다.
+> ⚠ 이 σ=5 m 도 GPS 관련 다른 수치와 마찬가지로 bag 재분석 결과이며
+> 실기 검증 전입니다.
+
+### `tools/gps_vs_odom.py` / `check_gnss_0812.py` / `plot_gnss_quality.py` / `scan_gnss_bags.py` / `survey_topics.py` — GPS 품질 재분석 5종 (2026-08-13 신설)
+
+| | 받는 것 | 내는 것 | 목적 |
+|---|---|---|---|
+| `gps_vs_odom.py` | bag `/gnss`, `/sportmodestate` | 잔차 PNG | hdop 불량 구간이 실제로 틀어졌나 — leg odom(0.31% 드리프트)을 기준으로 상사변환 잔차 비교. **σ=5m 의 직접 근거** |
+| `check_gnss_0812.py` | bag `/gnss` | 표준출력 | bag 의 hdop 분포로 UERE 재산정. **내부 UERE 재산정 로직은 08-13 결론과 안 맞아 폐기됨** — 실행은 되지만 결과를 신뢰하지 말 것 |
+| `plot_gnss_quality.py` | bag `/gnss` | PNG | hdop 스파이크가 시간·궤적 어디서 났는지 (콜드스타트 vs 지형 multipath 구분) |
+| `scan_gnss_bags.py` | bag 여러 개 | 표준출력 한 줄씩 | 유선(랜투랜)/무선(공유기) 녹화본의 GPS 품질 비교 |
+| `survey_topics.py` | 로봇 연결 상태(실기) | 표준출력/파일 — 토픽별 주기·샘플 | 발행자 있는 토픽만 관찰(무한대기 방지), 점군/이미지는 헤더·크기만 기록 |
+
+전부 노드가 아니라 bag/실기를 직접 읽는 오프라인 스크립트입니다(rosbag2_py
+또는 rclpy 구독).
+
+> **2026-08-13 버그 수정**: `survey_topics.py` 가 BEST_EFFORT 와 RELIABLE
+> 구독을 동시에 걸어 RELIABLE 발행자의 콜백이 두 번 불려 주기가 2배로
+> 잘못 계산되던 문제를 고쳤습니다(BEST_EFFORT 하나만 걸면 양쪽 발행자와
+> 모두 매칭됨 — `leg_odom_refine.py` 가 이 교훈을 그대로 따릅니다).
+
+### `tools/play_bag_rviz.sh` — bag 재생 + RViz (2026-08-13 신설)
+
+| 인자 | `<bag> [배속(기본 0.5)]` |
+
+bag 안의 토픽을 확인해 RViz 설정을 그 bag 에 맞춰 생성하고, RViz 와 bag
+재생을 함께 띄웁니다. **QoS 를 Best Effort 로 맞추는 것이 핵심** — 기본
+Reliability 로 두면 토픽은 보이는데 점이 하나도 안 뜨는 문제가 있었습니다.
+`source`/`./` 겸용, 서브셸로 감싸 `set -o pipefail`·trap 이 호출한 셸로
+새지 않습니다. `set -u` 는 쓰지 않습니다(ROS 환경 source 시 `$AMENT_TRACE_SETUP_FILES`
+미정의로 즉시 죽는 문제 회피).
 
 ### `tools/loop_correct_v2.py` — 루프 클로저 (실내)
 
@@ -612,6 +929,26 @@ tools/lio_tf.py
 
 **실시간 위치추정·주행용입니다.** 지도 생성에는 더 이상 쓰지 않습니다.
 
+### `tools/run_outdoor_loc.sh` — 실외 위치추정 1단계 실행 (2026-08-13 신설)
+
+| 인자 | `[k값]` (생략 시 `go2_calib.K_OUTDOOR`) |
+
+`localization_stub.py` 를 `-r __ns:=/hknu -r /tf:=/tf -r /tf_static:=/tf_static`
+리매핑으로 실행합니다. `source`/`./` 겸용, 서브셸로 감싸 있어 source 로
+실행해도 `set -e`·변수·마지막 `exec` 가 호출한 터미널로 새지 않습니다(끝내려면
+Ctrl-C). **`run_indoor.sh` 와 동시에 띄우지 마십시오** — 둘 다 `map→odom`
+을 발행합니다.
+
+### `tools/run_leg_odom.sh` — leg_odom_refine.py 실행 (2026-08-19 신설)
+
+| 인자 | `[indoor\|outdoor] [--bag]` (순서 무관, 기본 outdoor·실기) |
+
+`indoor`/`outdoor` 는 `kx_a`/`ky_a` 에 넣을 k 값만 고릅니다(`go2_calib.K_INDOOR`
+/ `K_OUTDOOR`) — 값을 스크립트에 박지 않고 매번 `python3 -c` 로 `go2_calib.py`
+에서 직접 읽어 두 곳이 어긋나는 것을 막습니다. `run_outdoor_loc.sh` 와 같은
+서브셸 방식. **TF 리매핑을 하지 않습니다** — `leg_odom_refine.py` 는 `/tf`
+를 전혀 건드리지 않습니다.
+
 ### `tools/repro_run.sh`
 
 | 인자 | `<실행이름> [간격초] [bag경로] [가속도토픽]` |
@@ -650,25 +987,36 @@ from go2_calib import R_LB, LEVER
 R_BL = R_LB.T
 ```
 
-### 축척계수 `k` 도 중복입니다
+### 축척계수 `k` — 2026-08-13 통합 완료, 새 중복은 속도의존 항
 
 | 출처 | 값 | 방법 |
 |---|---|---|
 | 실내 줄자 (2026-08-10) | **1.1995** | 타일 51.83 m, 6회, 편차 0.33 m |
 | 실외 GPS loop1_1440 | **1.1910** | 상사변환 정렬 |
 | 실외 GPS loop1_1449 | **1.2327** | 상사변환 정렬 |
+| 실외 GTSAM 배치 (2026-08-13) | **1.23 (확정)** | `gtsam_batch_0812.py` k 스윕, GPS 잔차 최소 |
 
-세 방법이 독립적으로 1.19~1.23 을 가리키므로 **다리 오도메트리가 거리를
-약 20% 짧게 세는 것은 확정**입니다. 다만 1.19 vs 1.23 의 3.5% 편차는
-미해결이며, 폐루프를 더 확보해 수렴점을 찾아야 합니다.
+네 방법이 독립적으로 1.19~1.23 을 가리키므로 **다리 오도메트리가 거리를
+약 20% 짧게 세는 것은 확정**입니다. `K_OUTDOOR=1.23` 으로 확정해
+`go2_calib.py` 한 곳에 두었고, **`odom_map_build_v3.py`, `build_maps_0812.py`,
+`localization_stub.py`, `leg_odom_refine.py`, `gtsam_batch_0812.py` 가 전부
+여기서 import 합니다.** 더 이상 각자 기본값을 하드코딩하지 않습니다
+(과거엔 `odom_map_build_v2/v3`, `loop_correct_v2`, `build_maps_0812` 가 각자
+1.1995 를 들고 있었음 — 해결됨).
 
-현재 `odom_map_build_v2/v3`, `loop_correct_v2`, `build_maps_0812` 가 각자
-기본값 1.1995 를 들고 있습니다. **`go2_calib.py` 로 옮기는 것이 낫습니다.**
+**새로 생긴 중복 후보**: `leg_odom_refine.py` 3단의 `KX_A/B`, `KY_A/B` 도
+`go2_calib.py` 에 있지만, `run_leg_odom.sh` 는 이 값을 스크립트에 다시
+박지 않고 매번 `python3 -c` 로 읽습니다(의도적 회피). 다만 `KX_B=KY_B=0`
+(미측정) 이라 지금은 `K_OUTDOOR` 와 사실상 동일합니다 — `scale_vs_speed.py`
+로 채우기 전까지는 실질적 위험이 없습니다.
 
 > ⚠ **폐루프 시험으로는 축척 오차가 잡히지 않습니다.** 궤적 전체가 같은
 > 비율로 줄어들 뿐 모양은 같아 출발점으로 그대로 돌아옵니다. 0812 의 폐루프
 > 0.31% 와 축척 20% 오차는 모순이 아니라 서로 다른 것을 재고 있습니다.
 > **GPS 웨이포인트 주행에는 축척 쪽이 직접 영향을 줍니다.**
+
+> ⚠ **k=1.23 자체가 GPS 기반 재분석 결과라 실기 검증 전입니다.** 노면이
+> 바뀌면(특히 눈) 다시 재야 합니다 — `odom_scale_check.py` 참고.
 
 ---
 
@@ -739,9 +1087,29 @@ ros2 bag record -o go2_outdoor_$(date +%m%d_%H%M) \
 
 ## 7. 다음 작업
 
-1. **GTSAM + GPS factor** — σ 5 m, Huber 로버스트, hdop 기반 factor별 가중
-2. **축척 재현성** — 폐루프를 더 확보해 1.19~1.23 의 수렴점 확인
+1. ~~**GTSAM + GPS factor**~~ → **오프라인 배치까지 완료** (`gtsam_batch_0812.py`,
+   k=1.23 확정). 남은 것: Huber δ·hdop 가중을 08-13 결론에 맞게 고치고
+   (`docs/COMMIT_PLAN_0813.md` 참고), **실시간 노드로 이식** — 지금은
+   `localization_stub.py`(1단계, k 만) 가 실시간의 전부입니다.
+2. **축척 재현성** — 1.19~1.23 편차는 GTSAM 배치로 1.23 확정했으나 ⚠ 실기
+   검증 전. `scale_vs_speed.py` 로 속도의존성(`KX_B`/`KY_B`)도 채울 것.
 3. **정지 3분 bag** 매 세션 + 위성수·hdop 동시 기록
 4. **격자 지면 밴드** 전역 → 셀별 국소로 (실외 기복 대응)
 5. **루프 안쪽 미관측** — 라이다 40 m 로 중앙 미도달, 경로 설계 또는 보간 필요
-6. `k` 를 `go2_calib.py` 로 통합, `robot_pose.py`·`go2_nav_interface.py` import 전환
+6. ~~`k` 를 `go2_calib.py` 로 통합~~ → **완료**(`K_INDOOR`/`K_OUTDOOR`, 중복
+   정의 버그도 수정). `robot_pose.py`·`go2_nav_interface.py` 의 `R_LB`/`LEVER`
+   자체 상수 중복은 **아직 미해결**(3절 표 참고 — 이 둘은 축척이 아니라
+   좌표변환 상수라 별개 문제).
+7. **`leg_odom_refine.py` 실기 검증** — 이 세션에서는 `py_compile` 문법
+   확인만 했습니다. ZUPT·미끄럼배제·방위보정 4단계를 실제 로봇/bag 재생으로
+   하나씩 검증할 것. `enable_slip` 은 `foot_field_probe.py` 결과(rho≥0.9)
+   전까지 금지.
+8. **`localization_stub.py` → 2단계(GPS 앵커링)** — 지금은 `map` 원점이
+   부팅 지점이라 GPS 웨이포인트를 못 씁니다. GPS 원점 + 진북 정렬이 필요.
+9. **`elev_from_pitch.py` 전제 검증** — 몸통 피치가 지면 경사를 그대로
+   반영하는지 평지/경사 폐루프로 교차검증.
+10. **`/hknu/robot_map`** — 이름만 잡혀 있고 비어 있음. `pcd_to_grid.py`
+    출력을 실어야 함.
+11. **팀원A 합의 필요** — 팀원A의 경로계획 노드가 아직 `/lf/sportmodestate`
+    를 직접 구독함. `localization_stub.py`/`leg_odom_refine.py` 를 띄워도
+    팀원A 쪽 구독이 안 바뀌면 아무 효과가 없음.
