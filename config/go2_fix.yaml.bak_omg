@@ -1,8 +1,8 @@
 /**:
     ros__parameters:
         common:
-            lid_topic:  "/utlidar/cloud"
-            imu_topic:  "/l1_imu_fixed"
+            lid_topic: "/utlidar/cloud" 
+            imu_topic: "/l1_imu_fixed"
             con_frame: false # true: if you need to combine several LiDAR frames into one
             con_frame_num: 1 # the number of frames combined
             cut_frame: false # true: if you need to cut one LiDAR frame into several subframes
@@ -37,14 +37,9 @@
             match_s: 81.0
             fov_degree: 180.0
             det_range: 100.0
-            # ★ 내장 IMU가 기울어 장착됨(roll~110/pitch~18).
-            #   gravity_align=true로 월드축을 지정 중력에 강제 정렬하면, 그 지정 방향이
-            #   실제(기울어진) 중력과 어긋나 궤적이 서서히 아래로 처지는 드리프트가 발생.
-            #   → 강제 정렬을 끄고 필터가 초기 정지구간에서 잡은 자세를 그대로 기준으로 사용.
-            #   지도가 실제 IMU 기울기만큼 살짝 기울 수 있으나, 궤적 형상/상대오차는 정확.
-            gravity_align: true # false: do NOT force-align world z to a specified gravity
-            gravity: [0.0, 0.0, -9.810] # (gravity_align=false이면 미사용)
-            gravity_init: [0.0, 0.0, -9.810] # preknown gravity in the first IMU body frame, use when imu_en is false or start from a non-stationary state
+            gravity_align: true # true to align the z axis of world frame with the direction of gravity, and the gravity direction should be specified below
+            gravity: [0.0, 0.0, -9.810] # [0.0, 9.810, 0.0] # gravity to be aligned
+            gravity_init: [0.0, 0.0, -9.810] # [0.0, 9.810, 0.0] # # preknown gravity in the first IMU body frame, use when imu_en is false or start from a non-stationary state
             
             # transform from imu to lidar
             extrinsic_T: [ 0.007698, 0.014655, -0.00667] # ulhk # [-0.5, 1.4, 1.5] # utbm
@@ -64,3 +59,20 @@
             pcd_save_en: true       # save map to pcd file
             interval: -1            # how many LiDAR frames saved in each pcd file; 
                                         # -1 : all frames will be saved in ONE pcd file, may lead to memory crash when having too much frames.
+
+        zupt_en: true
+        zupt_vel_en: true
+        zupt_omg_en: true
+        zupt_cov_vel: 0.01
+        zupt_cov_omg: 0.0001
+        zupt_flag_topic: "/zupt_active"
+
+        leg_en: true
+        leg_use_z: false
+        leg_cov: 0.01
+        leg_scale: 0.95
+        leg_odom_topic: "/utlidar/robot_odom"
+        leg_R_ib: [0.523029, -0.838576, 0.152420, -0.810712, -0.544668, -0.214668, 0.263034, -0.011292, -0.964721]
+        leg_rate_hz: 20.0
+        leg_att_en: false
+        leg_lever: [0.322, 0.005, 0.05]

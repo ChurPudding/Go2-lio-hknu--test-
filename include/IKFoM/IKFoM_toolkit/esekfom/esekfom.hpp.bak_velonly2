@@ -403,17 +403,9 @@ public:
 		Matrix<scalar_type, Eigen::Dynamic, Eigen::Dynamic> HPHT = H * PHT; // HPHᵀ
 		for (int m=0; m<md; m++) HPHT(m,m) += r_leg;                        // S = HPHᵀ + σ²I
 		Matrix<scalar_type, n, Eigen::Dynamic> K = PHT * HPHT.inverse();    // K = PHᵀS⁻¹
-		if (vel_only) {                                       // Schmidt식: pos(0-2)·vel(12-14) 행만 갱신
-		    Matrix<scalar_type, n, Eigen::Dynamic> Kv = Matrix<scalar_type, n, Eigen::Dynamic>::Zero(n, md);
-		    Kv.block(0, 0, 3, md)  = K.block(0, 0, 3, md);
-		    Kv.block(12, 0, 3, md) = K.block(12, 0, 3, md);
-		    K = Kv;
-		}
 		Matrix<scalar_type, n, 1> dx_ = K * r;								// δx = Kr
 
-		Matrix<scalar_type, n, n> IKH = Matrix<scalar_type, n, n>::Identity() - K * H;
-		Matrix<scalar_type, n, n> Pj = IKH * P_ * IKH.transpose() + K * (r_leg * K.transpose());   // Joseph (임의 이득에 일관)
-		P_ = Pj;
+		P_ -= K * (H * P_);                              // P ← (I−KH)P
 		Matrix<scalar_type, n, n> Ps = P_ + P_.transpose();  P_ = scalar_type(0.5) * Ps;   // 대칭 유지
 		x_.boxplus(dx_);
 		return r.norm();                                 // x ← x ⊞ δx

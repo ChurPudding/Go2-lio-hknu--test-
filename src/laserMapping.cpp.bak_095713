@@ -11,8 +11,6 @@
 #include "IMU_Processing.hpp"
 
 #include <nav_msgs/msg/odometry.hpp>
-#include <std_msgs/msg/bool.hpp>
-#include <atomic>
 #include <nav_msgs/msg/path.hpp>
 #include <visualization_msgs/msg/marker.hpp>
 #include <pcl_conversions/pcl_conversions.h>
@@ -46,17 +44,6 @@ double time_update_last = 0.0, time_current = 0.0, time_predict_last_const = 0.0
 
 shared_ptr<ImuProcess> p_imu(new ImuProcess());
 bool init_map = false, flg_first_scan = true;
-std::atomic<bool> zupt_active{false};
-std::atomic<double> leg_vx{0.0}, leg_vy{0.0}, leg_vz{0.0};
-#include <chrono>
-std::atomic<uint32_t> leg_seq{0};   // 다리 샘플 카운터
-#include <mutex>
-#include <deque>
-#include <algorithm>
-struct LegSample { double t, vx, vy, vz; };
-std::deque<LegSample> leg_buf;  std::mutex leg_mtx;   // 다리 샘플 링버퍼 (header stamp)
-Eigen::Matrix3d leg_Rib = Eigen::Matrix3d::Identity();   // base_link -> IMU(L1), yaml leg_R_ib
-Eigen::Vector3d leg_rL = Eigen::Vector3d::Zero();   // r_L = R_LB * LEVER (L1 프레임)
 PointCloudXYZI::Ptr ptr_con(new PointCloudXYZI());
 
 // Time Log Variables
@@ -726,11 +713,6 @@ int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
     auto nh = std::make_shared<rclcpp::Node>("laserMapping");
     readParameters(nh);
-    if (leg_R_ib.size() == 9) leg_Rib = Eigen::Map<const Eigen::Matrix<double,3,3,Eigen::RowMajor>>(leg_R_ib.data());
-    else RCLCPP_ERROR(nh->get_logger(), "leg_R_ib needs 9 values (got %zu) - using identity", leg_R_ib.size());
-    RCLCPP_INFO(nh->get_logger(), "leg_R_ib[0,0] = %+.6f (expect +0.523029)", leg_Rib(0,0));
-    if (leg_lever.size() == 3) leg_rL = leg_Rib * Eigen::Vector3d(leg_lever[0], leg_lever[1], leg_lever[2]);
-    RCLCPP_INFO(nh->get_logger(), "leg lever r_L (L1 frame) = [%.3f %.3f %.3f]", leg_rL(0), leg_rL(1), leg_rL(2));
     cout << "lidar_type: " << lidar_type << endl;
 
     path.header.stamp = get_ros_time(lidar_end_time);
@@ -799,20 +781,6 @@ int main(int argc, char **argv) {
     sub_pcl = nh->create_subscription<sensor_msgs::msg::PointCloud2>(lid_topic, rclcpp::SensorDataQoS(), standard_pcl_cbk);
     // }
     auto sub_imu = nh->create_subscription<sensor_msgs::msg::Imu>(imu_topic, 200000, imu_cbk);
-    auto sub_zupt = nh->create_subscription<std_msgs::msg::Bool>(
-        zupt_flag_topic, rclcpp::QoS(10),
-        [](const std_msgs::msg::Bool::SharedPtr m){ zupt_active.store(m->data); });
-    auto sub_leg = nh->create_subscription<nav_msgs::msg::Odometry>(
-        leg_odom_topic, rclcpp::QoS(10),
-        [](const nav_msgs::msg::Odometry::SharedPtr m){
-            leg_vx.store(m->twist.twist.linear.x);
-            leg_vy.store(m->twist.twist.linear.y);
-            leg_vz.store(m->twist.twist.linear.z);
-            leg_seq.fetch_add(1);
-            { std::lock_guard<std::mutex> lk(leg_mtx);
-              leg_buf.push_back({m->header.stamp.sec + m->header.stamp.nanosec * 1e-9, m->twist.twist.linear.x, m->twist.twist.linear.y, m->twist.twist.linear.z});
-              if (leg_buf.size() > 300) leg_buf.pop_front(); }
-        });
 
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubLaserCloudFullRes;
     rclcpp::Publisher<sensor_msgs::msg::PointCloud2>::SharedPtr pubLaserCloudFullRes_body;
@@ -1083,33 +1051,6 @@ int main(int argc, char **argv) {
                     if (!kf_output.update_iterated_dyn_share_modified()) {
                         idx = idx + time_seq[k];
                         continue;
-                    }
-                    if (zupt_en && zupt_active.load()) {
-                        kf_output.update_zupt(zupt_vel_en, zupt_omg_en, zupt_cov_vel, zupt_cov_omg);
-                    }
-                                        if (leg_en && !zupt_active.load()) {
-                        // 다리 샘플을 필터 시각(time_current + leg_delay)에 최근접으로 선택, 필터 시각 기준 leg_rate_hz 이하 1회 갱신
-                        static double leg_t_used = -1.0, leg_t_last = -1e9;  static int leg_n = 0;  static double leg_r2 = 0.0, leg_dt_sum = 0.0;
-                        LegSample ls{};  bool have = false;
-                        {   std::lock_guard<std::mutex> lk(leg_mtx);
-                            if (!leg_buf.empty()) {
-                                const double tq = time_current + leg_delay;
-                                const auto it = std::min_element(leg_buf.begin(), leg_buf.end(),
-                                    [&](const LegSample &a, const LegSample &b){ return std::fabs(a.t - tq) < std::fabs(b.t - tq); });
-                                ls = *it;  have = std::fabs(ls.t - tq) < 0.05;   // 50 ms 이내 샘플만
-                            }
-                        }
-                        if (have && ls.t != leg_t_used && time_current - leg_t_last >= 1.0 / leg_rate_hz) {
-                            leg_t_used = ls.t;  leg_t_last = time_current;
-                            Eigen::Matrix<double,3,1> vleg = leg_Rib * (Eigen::Vector3d(ls.vx, ls.vy, ls.vz) * leg_scale);   // z = R_LB * k * v_leg
-                            const double rn = kf_output.update_leg(vleg, leg_use_z, leg_cov, leg_att_en, leg_rL, leg_omg_en, leg_vel_only);
-                            leg_r2 += rn * rn;  leg_dt_sum += ls.t - time_current;
-                            if (++leg_n % 100 == 0) {
-                                RCLCPP_INFO(rclcpp::get_logger("laserMapping"), "leg update #%d  z(IMU)=[%.2f %.2f %.2f]  innov RMS(100)=%.3f m/s  mean(t_leg-t_filter)=%+.3f s",
-                                            leg_n, vleg(0), vleg(1), vleg(2), std::sqrt(leg_r2 / 100.0), leg_dt_sum / 100.0);
-                                leg_r2 = 0.0;  leg_dt_sum = 0.0;
-                            }
-                        }
                     }
 
                     if (prop_at_freq_of_imu) {

@@ -1087,27 +1087,20 @@ int main(int argc, char **argv) {
                     if (zupt_en && zupt_active.load()) {
                         kf_output.update_zupt(zupt_vel_en, zupt_omg_en, zupt_cov_vel, zupt_cov_omg);
                     }
-                                        if (leg_en && !zupt_active.load()) {
-                        // 다리 샘플을 필터 시각(time_current + leg_delay)에 최근접으로 선택, 필터 시각 기준 leg_rate_hz 이하 1회 갱신
-                        static double leg_t_used = -1.0, leg_t_last = -1e9;  static int leg_n = 0;  static double leg_r2 = 0.0, leg_dt_sum = 0.0;
-                        LegSample ls{};  bool have = false;
-                        {   std::lock_guard<std::mutex> lk(leg_mtx);
-                            if (!leg_buf.empty()) {
-                                const double tq = time_current + leg_delay;
-                                const auto it = std::min_element(leg_buf.begin(), leg_buf.end(),
-                                    [&](const LegSample &a, const LegSample &b){ return std::fabs(a.t - tq) < std::fabs(b.t - tq); });
-                                ls = *it;  have = std::fabs(ls.t - tq) < 0.05;   // 50 ms 이내 샘플만
-                            }
-                        }
-                        if (have && ls.t != leg_t_used && time_current - leg_t_last >= 1.0 / leg_rate_hz) {
-                            leg_t_used = ls.t;  leg_t_last = time_current;
-                            Eigen::Matrix<double,3,1> vleg = leg_Rib * (Eigen::Vector3d(ls.vx, ls.vy, ls.vz) * leg_scale);   // z = R_LB * k * v_leg
-                            const double rn = kf_output.update_leg(vleg, leg_use_z, leg_cov, leg_att_en, leg_rL, leg_omg_en, leg_vel_only);
-                            leg_r2 += rn * rn;  leg_dt_sum += ls.t - time_current;
-                            if (++leg_n % 100 == 0) {
-                                RCLCPP_INFO(rclcpp::get_logger("laserMapping"), "leg update #%d  z(IMU)=[%.2f %.2f %.2f]  innov RMS(100)=%.3f m/s  mean(t_leg-t_filter)=%+.3f s",
-                                            leg_n, vleg(0), vleg(1), vleg(2), std::sqrt(leg_r2 / 100.0), leg_dt_sum / 100.0);
-                                leg_r2 = 0.0;  leg_dt_sum = 0.0;
+                    if (leg_en && !zupt_active.load()) {
+                        Eigen::Matrix<double,3,1> vleg(leg_vx.load()*leg_scale,   // z = k·v_leg
+                                                       leg_vy.load()*leg_scale,
+                                                       leg_vz.load()*leg_scale);
+                        vleg = leg_Rib * vleg;   // z = R_LB * (k * v_leg): base_link -> IMU 프레임
+                        {   // 새 다리 샘플에 대해서만, leg_rate_hz 이하로 1회 갱신
+                            static uint32_t leg_seq_used = 0;  static double leg_t_last = -1.0;  static int leg_n = 0;  static double leg_r2 = 0.0;
+                            const uint32_t sq = leg_seq.load();
+                            const double tnow = std::chrono::duration<double>(std::chrono::steady_clock::now().time_since_epoch()).count();
+                            if (sq != leg_seq_used && (leg_t_last < 0 || tnow - leg_t_last >= 1.0 / leg_rate_hz)) {
+                                leg_seq_used = sq;  leg_t_last = tnow;
+                                const double rn = kf_output.update_leg(vleg, leg_use_z, leg_cov, leg_att_en, leg_rL, leg_omg_en);  leg_r2 += rn * rn;
+                                if (++leg_n % 100 == 0)
+                                    { RCLCPP_INFO(rclcpp::get_logger("laserMapping"), "leg update #%d  z(IMU)=[%.2f %.2f %.2f]  innov RMS(100)=%.3f m/s", leg_n, vleg(0), vleg(1), vleg(2), std::sqrt(leg_r2 / 100.0));  leg_r2 = 0.0; }
                             }
                         }
                     }

@@ -28,9 +28,6 @@ extern std::string leg_odom_topic;
 extern std::vector<double> leg_R_ib;   // base_link -> IMU(L1) 회전, row-major 9개
 extern std::vector<double> leg_lever;   // base 원점 -> L1 원점 (base 프레임, m)
 extern double leg_rate_hz;  extern bool leg_att_en;
-extern bool leg_omg_en;
-extern bool leg_vel_only;
-extern double leg_delay;   // 다리 샘플 시각 보정 [s]
 extern bool prop_at_freq_of_imu, check_satu, con_frame, cut_frame;
 extern bool use_imu_as_input, space_down_sample;
 extern bool extrinsic_est_en, publish_odometry_without_downsample;

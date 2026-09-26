@@ -1,8 +1,8 @@
 /**:
     ros__parameters:
         common:
-            lid_topic:  "/utlidar/cloud"
-            imu_topic:  "/l1_imu_fixed"
+            lid_topic: "/utlidar/cloud" 
+            imu_topic: "/l1_imu_fixed" 
             con_frame: false # true: if you need to combine several LiDAR frames into one
             con_frame_num: 1 # the number of frames combined
             cut_frame: false # true: if you need to cut one LiDAR frame into several subframes
@@ -53,7 +53,7 @@
                           0.0, 0.0, 1.0 ] # ulhk 4 utbm 3
 
         odometry: 
-            publish_odometry_without_downsample: false  
+            publish_odometry_without_downsample: true  
 
         publish:
             path_en: true                 # false: close the path output
