@@ -72,3 +72,7 @@ results/repro/
 # 런타임 크래시 덤프
 *.blob
 mono_crash.*
+
+# view_frames 출력 (루트에 쌓임)
+frames_*.gv
+frames_*.pdf
