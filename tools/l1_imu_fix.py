@@ -98,7 +98,13 @@ class L1ImuFix(Node):
         self.prev_omega = None        # 접선 항용: 직전 각속도
         self.prev_t = None            # 직전 시각 [s]
         self.alpha_filt = np.zeros(3) # 각가속도 EMA (미분 노이즈 억제)
-        self.ALPHA_BETA = 0.75        # 각가속도 저역통과 계수 (클수록 부드러움)
+        self.declare_parameter('alpha_beta', 0.75)        # 각가속도 EMA 계수 (클수록 부드러움)
+        self.declare_parameter('lever_centri_en', True)    # 원심항 ω×(ω×r) 적용
+        self.declare_parameter('lever_tangent_en', True)   # 접선항 α×r 적용
+        self.ALPHA_BETA = float(self.get_parameter('alpha_beta').value)
+        self.lever_centri_en = bool(self.get_parameter('lever_centri_en').value)
+        self.lever_tangent_en = bool(self.get_parameter('lever_tangent_en').value)
+        self.get_logger().info('lever arm: centri=%s tangent=%s alpha_beta=%.2f' % (self.lever_centri_en, self.lever_tangent_en, self.ALPHA_BETA))
 
         # --- time_sync 상태 ---
         self.ref_stamp = None                       # 최신 /utlidar/imu header [s]
@@ -243,7 +249,8 @@ class L1ImuFix(Node):
 
         # (1) 원심 항 ω×(ω×r) : 일정한 회전에서 큼
         a_centri = np.cross(omega, np.cross(omega, self.lever_l))
-        acc_lidar = acc_lidar + a_centri
+        if self.lever_centri_en:
+            acc_lidar = acc_lidar + a_centri
 
         # (2) 접선 항 α×r : 각가속도 α = dω/dt, 급격한 회전 변화에서 큼.
         #     미분은 노이즈를 키우므로 EMA 저역통과로 완화한다.
@@ -256,7 +263,8 @@ class L1ImuFix(Node):
                 self.alpha_filt = (self.ALPHA_BETA * self.alpha_filt
                                    + (1.0 - self.ALPHA_BETA) * alpha_raw)
                 a_tangent = np.cross(self.alpha_filt, self.lever_l)
-                acc_lidar = acc_lidar + a_tangent
+                if self.lever_tangent_en:
+                    acc_lidar = acc_lidar + a_tangent
         self.prev_omega = omega
         self.prev_t = t_now
 
