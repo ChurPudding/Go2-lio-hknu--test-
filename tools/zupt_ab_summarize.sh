@@ -10,7 +10,7 @@
 set -u
 BAGDIR=~/data/bags
 LOGDIR=~/data/zupt_ab_logs
-YAWCMP="${YAWCMP:-$HOME/data/bags/yaw_compare.py}"   # 없으면 아래에서 안내 후 중단
+YAWCMP="${YAWCMP:-$HOME/fastlio_ws/analysis/yaw_compare.py}"   # 없으면 아래에서 안내 후 중단
 CSV="$LOGDIR/summary.csv"
 mkdir -p "$LOGDIR"
 
