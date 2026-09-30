@@ -1,5 +1,16 @@
 /**:
     ros__parameters:
+        # ── 런치 파일에서 옮김 (2026-09-30, 값 동일) ──
+        use_imu_as_input: false
+        prop_at_freq_of_imu: true
+        check_satu: true
+        init_map_size: 10
+        point_filter_num: 1
+        space_down_sample: true
+        filter_size_surf: 0.1
+        filter_size_map: 0.1
+        cube_side_length: 1000.0
+        runtime_pos_log_enable: false
         common:
             lid_topic: "/utlidar/cloud" 
             imu_topic: "/l1_imu_fixed"
@@ -79,3 +90,20 @@
         leg_vel_only: true
         leg_delay: 0.0
         leg_lever: [0.322, 0.005, 0.05]
+
+/l1_imu_fix:
+    ros__parameters:
+        out_topic: '/l1_imu_fixed'
+        frame_id: 'utlidar_lidar'
+        rest_check: true
+        acc_topic: '/lowstate'
+        time_sync: false
+        alpha_beta: 0.75
+        lever_centri_en: true
+        lever_tangent_en: true
+
+/zvd_node:
+    ros__parameters:
+        v_th: 0.05
+        dwell: 0.25
+        release: 1.5

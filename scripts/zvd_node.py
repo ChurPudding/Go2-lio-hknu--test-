@@ -7,9 +7,12 @@ from std_msgs.msg import Bool
 class ZVD(Node):
     def __init__(self):
         super().__init__('zvd_node')
-        self.v_th = 0.05        # m/s 정지 판정
-        self.dwell = 0.25       # s 유지
-        self.release = 1.5      # 해제 배수(히스테리시스)
+        self.declare_parameter('v_th', 0.05)  # m/s 정지 판정
+        self.v_th = float(self.get_parameter('v_th').value)
+        self.declare_parameter('dwell', 0.25)  # s 유지
+        self.dwell = float(self.get_parameter('dwell').value)
+        self.declare_parameter('release', 1.5)  # 해제 배수(히스테리시스)
+        self.release = float(self.get_parameter('release').value)
         self.pub = self.create_publisher(Bool, '/zupt_active', 10)
         self.sub = self.create_subscription(Odometry, '/utlidar/robot_odom', self.cb, 20)
         self.still_since = None

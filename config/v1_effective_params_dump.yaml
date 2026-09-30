@@ -1,0 +1,128 @@
+/laserMapping:
+  ros__parameters:
+    check_satu: true
+    common:
+      con_frame: false
+      con_frame_num: 1
+      cut_frame: false
+      cut_frame_time_interval: 0.1
+      imu_topic: /l1_imu_fixed
+      lid_topic: /utlidar/cloud
+      time_lag_imu_to_lidar: 0.0
+    cube_side_length: 1000.0
+    filter_size_map: 0.1
+    filter_size_surf: 0.1
+    init_map_size: 10
+    leg_R_ib:
+    - 0.523029
+    - -0.838576
+    - 0.15242
+    - -0.810712
+    - -0.544668
+    - -0.214668
+    - 0.263034
+    - -0.011292
+    - -0.964721
+    leg_att_en: false
+    leg_cov: 0.01
+    leg_delay: 0.0
+    leg_en: true
+    leg_lever:
+    - 0.322
+    - 0.005
+    - 0.05
+    leg_odom_topic: /utlidar/robot_odom
+    leg_omg_en: true
+    leg_rate_hz: 20.0
+    leg_scale: 1.23
+    leg_use_z: false
+    leg_vel_only: true
+    mapping:
+      acc_cov_input: 0.1
+      acc_cov_output: 500.0
+      acc_norm: 9.81
+      b_acc_cov: 0.0001
+      b_gyr_cov: 0.0001
+      det_range: 100.0
+      extrinsic_R:
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+      - 0.0
+      - 0.0
+      - 0.0
+      - 1.0
+      extrinsic_T:
+      - 0.007698
+      - 0.014655
+      - -0.00667
+      extrinsic_est_en: false
+      fov_degree: 180.0
+      gravity:
+      - 0.0
+      - 0.0
+      - -9.81
+      gravity_align: true
+      gravity_init:
+      - 0.0
+      - 0.0
+      - -9.81
+      gyr_cov_input: 0.01
+      gyr_cov_output: 1000.0
+      imu_en: true
+      imu_meas_acc_cov: 0.1
+      imu_meas_omg_cov: 0.1
+      imu_time_inte: 0.004
+      lidar_meas_cov: 0.01
+      match_s: 81.0
+      plane_thr: 0.1
+      satu_acc: 30.0
+      satu_gyro: 35.0
+      start_in_aggressive_motion: false
+      vel_cov: 20.0
+    odom_child_frame_id: aft_mapped
+    odom_header_frame_id: camera_init
+    odom_only: false
+    odometry:
+      publish_odometry_without_downsample: false
+    pcd_save:
+      interval: -1
+      pcd_save_en: true
+    point_filter_num: 1
+    preprocess:
+      blind: 0.5
+      lidar_type: 5
+      scan_line: 18
+      scan_rate: 10
+      timestamp_unit: 0
+    prop_at_freq_of_imu: true
+    publish:
+      path_en: true
+      scan_bodyframe_pub_en: false
+      scan_publish_en: true
+    qos_overrides:
+      /parameter_events:
+        publisher:
+          depth: 1000
+          durability: volatile
+          history: keep_last
+          reliability: reliable
+      /tf:
+        publisher:
+          depth: 100
+          durability: volatile
+          history: keep_last
+          reliability: reliable
+    runtime_pos_log_enable: false
+    space_down_sample: true
+    use_imu_as_input: false
+    use_sim_time: false
+    zupt_cov_omg: 0.0001
+    zupt_cov_vel: 0.01
+    zupt_en: true
+    zupt_flag_topic: /zupt_active
+    zupt_omg_en: true
+    zupt_vel_en: true
+
