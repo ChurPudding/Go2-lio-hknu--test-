@@ -12,7 +12,7 @@
 
 구독
 ----
-    /gps/fix         sensor_msgs/NavSatFix        (gnss_bridge.py 출력)
+    /fix             sensor_msgs/NavSatFix        (gnss_bridge.py 출력)
     /lowstate        unitree_go/LowState          IMU
     /sportmodestate  unitree_go/SportModeState    몸통 속도
 
@@ -48,7 +48,7 @@ class GpsHeadingNode(Node):
         super().__init__('gps_heading')
 
         p = self.declare_parameter
-        p('gps_topic', '/gps/fix')
+        p('gps_topic', '/fix')
         p('lowstate_topic', '/lowstate')
         p('sport_topic', '/sportmodestate')
         p('out_topic', '~/heading')

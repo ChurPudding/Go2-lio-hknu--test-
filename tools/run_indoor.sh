@@ -12,7 +12,7 @@
 #  두 파이프라인이 같은 로봇에서 번갈아 돌아가므로 토픽 이름을 분리한다.
 #
 #      실내 (이 스크립트)          실외 (GPS)
-#      /indoor/base_pose           /gps/fix          gnss_bridge.py
+#      /indoor/base_pose           /fix              gnss_bridge.py
 #      /indoor/health              /gps/path         gnss_path.py
 #      /indoor/health_info
 #      TF indoor_map -> base_link

@@ -1,10 +1,10 @@
 #!/usr/bin/env python3
 """
-gnss_path.py  --  /gps/fix (NavSatFix) 를 국소 ENU 좌표로 바꿔 RViz 에 궤적으로 표시
+gnss_path.py  --  /fix (NavSatFix) 를 국소 ENU 좌표로 바꿔 RViz 에 궤적으로 표시
 
 gnss_bridge.py 뒤에 붙여 쓴다.
 
-    /gnss --[gnss_bridge]--> /gps/fix --[gnss_path]--> /gps/path, /gps/pose
+    /gnss --[gnss_bridge]--> /fix --[gnss_path]--> /gps/path, /gps/pose
 
 첫 유효 측위를 원점(0,0)으로 잡고 이후를 미터 단위 ENU(동-북-상)로 변환한다.
 위경도 차이가 작을 때 쓰는 국소 평면 근사이며, 수백 m 범위에서는 오차가 무시할
@@ -49,7 +49,7 @@ class GnssPath(Node):
     def __init__(self):
         super().__init__('gnss_path')
 
-        self.declare_parameter('in_topic', '/gps/fix')
+        self.declare_parameter('in_topic', '/fix')
         self.declare_parameter('frame_id', 'gps_local')
         self.declare_parameter('max_points', 20000)
         self.declare_parameter('min_step', 0.0)   # 이 거리 미만 이동은 무시 [m]
@@ -131,7 +131,8 @@ class GnssPath(Node):
     def report(self):
         if self.n_in == 0:
             self.get_logger().warn(
-                '/gps/fix 미수신. gnss_bridge.py 실행 여부와 bag 재생을 확인할 것')
+                '%s 미수신. gnss_bridge.py 실행 여부와 bag 재생을 확인할 것'
+                % self.get_parameter('in_topic').value)
             return
         if self.last is None:
             self.get_logger().info('in=%d, 유효 측위 없음' % self.n_in)
