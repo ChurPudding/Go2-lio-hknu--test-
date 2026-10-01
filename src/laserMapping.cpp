@@ -49,6 +49,14 @@ bool init_map = false, flg_first_scan = true;
 std::atomic<bool> zupt_active{false};
 std::atomic<double> leg_vx{0.0}, leg_vy{0.0}, leg_vz{0.0};
 #include <chrono>
+std::atomic<int64_t> zupt_rx_ns{0};   // /zupt_active 마지막 수신 시각 (steady_clock, ns)
+static int64_t steady_ns() {
+    return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
+}
+// zupt_timeout 보다 오래 수신이 없으면 false (발행 노드가 멈춰도 마지막 true 가 남지 않게)
+static bool zupt_active_fresh() {
+    return zupt_active.load() && (steady_ns() - zupt_rx_ns.load()) * 1e-9 <= zupt_timeout;
+}
 std::atomic<uint32_t> leg_seq{0};   // 다리 샘플 카운터
 #include <mutex>
 #include <deque>
@@ -806,7 +814,7 @@ int main(int argc, char **argv) {
     auto sub_imu = nh->create_subscription<sensor_msgs::msg::Imu>(imu_topic, 200000, imu_cbk);
     auto sub_zupt = nh->create_subscription<std_msgs::msg::Bool>(
         zupt_flag_topic, rclcpp::QoS(10),
-        [](const std_msgs::msg::Bool::SharedPtr m){ zupt_active.store(m->data); });
+        [](const std_msgs::msg::Bool::SharedPtr m){ zupt_active.store(m->data); zupt_rx_ns.store(steady_ns()); });
     auto sub_leg = nh->create_subscription<nav_msgs::msg::Odometry>(
         leg_odom_topic, rclcpp::QoS(10),
         [](const nav_msgs::msg::Odometry::SharedPtr m){
@@ -1089,10 +1097,11 @@ int main(int argc, char **argv) {
                         idx = idx + time_seq[k];
                         continue;
                     }
-                    if (zupt_en && zupt_active.load()) {
+                    const bool zupt_now = zupt_active_fresh();   // 한 점에서 ZUPT·다리 판정이 같은 값을 보게 1회만 읽음
+                    if (zupt_en && zupt_now) {
                         kf_output.update_zupt(zupt_vel_en, zupt_omg_en, zupt_cov_vel, zupt_cov_omg);
                     }
-                                        if (leg_en && !zupt_active.load()) {
+                                        if (leg_en && !zupt_now) {
                         // 다리 샘플을 필터 시각(time_current + leg_delay)에 최근접으로 선택, 필터 시각 기준 leg_rate_hz 이하 1회 갱신
                         static double leg_t_used = -1.0, leg_t_last = -1e9;  static int leg_n = 0;  static double leg_r2 = 0.0, leg_dt_sum = 0.0;
                         LegSample ls{};  bool have = false;

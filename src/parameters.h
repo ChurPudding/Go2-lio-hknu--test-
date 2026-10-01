@@ -21,6 +21,7 @@ extern int pcd_index;
 extern std::string lid_topic, imu_topic;
 extern bool zupt_en, zupt_vel_en, zupt_omg_en;
 extern double zupt_cov_vel, zupt_cov_omg;
+extern double zupt_timeout;   // /zupt_active 를 이보다 오래 못 받으면 false 로 봄 [s]
 extern std::string zupt_flag_topic;
 extern bool leg_en, leg_use_z;
 extern double leg_cov, leg_scale;

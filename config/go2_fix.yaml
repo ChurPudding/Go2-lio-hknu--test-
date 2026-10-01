@@ -77,6 +77,7 @@
         zupt_cov_vel: 0.01
         zupt_cov_omg: 0.0001
         zupt_flag_topic: "/zupt_active"
+        zupt_timeout: 0.5   # [s] /zupt_active 를 이보다 오래 못 받으면 false 로 봄
 
         leg_en: true
         leg_use_z: false
