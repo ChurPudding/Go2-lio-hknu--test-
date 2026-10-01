@@ -53,10 +53,6 @@ std::atomic<int64_t> zupt_rx_ns{0};   // /zupt_active 마지막 수신 시각 (s
 static int64_t steady_ns() {
     return std::chrono::duration_cast<std::chrono::nanoseconds>(std::chrono::steady_clock::now().time_since_epoch()).count();
 }
-// zupt_timeout 보다 오래 수신이 없으면 false (발행 노드가 멈춰도 마지막 true 가 남지 않게)
-static bool zupt_active_fresh() {
-    return zupt_active.load() && (steady_ns() - zupt_rx_ns.load()) * 1e-9 <= zupt_timeout;
-}
 std::atomic<uint32_t> leg_seq{0};   // 다리 샘플 카운터
 #include <mutex>
 #include <deque>
@@ -98,6 +94,26 @@ nav_msgs::msg::Odometry odomAftMapped;
 geometry_msgs::msg::PoseStamped msg_body_pose;
 
 auto logger = rclcpp::get_logger("laserMapping");
+
+constexpr double ZUPT_STALE_WARN_PERIOD = 5.0;   // 아래 경고의 최소 간격 [s]
+// 마지막으로 받은 값이 true 인데 zupt_timeout 을 넘겨 무시할 때의 경고. 간격을 먼저 걸러 실제로 찍을 때만 로그를 부른다
+static void warn_zupt_stale(int64_t now_ns, double age) {
+    static int64_t last_warn_ns = -1;   // -1 = 아직 안 찍음
+    if (last_warn_ns >= 0 && (now_ns - last_warn_ns) * 1e-9 < ZUPT_STALE_WARN_PERIOD) return;
+    last_warn_ns = now_ns;
+    RCLCPP_WARN(logger, "%s last value true but nothing received for %.2f s (> zupt_timeout %.2f s): ignoring ZUPT",
+                zupt_flag_topic.c_str(), age, zupt_timeout);
+}
+// zupt_timeout 보다 오래 수신이 없으면 false (발행 노드가 멈춰도 마지막 true 가 남지 않게).
+// 한 번도 못 받았으면 zupt_active 가 초기값 false 라 경고도 없다.
+static bool zupt_active_fresh() {
+    if (!zupt_active.load()) return false;
+    const int64_t now_ns = steady_ns();
+    const double age = (now_ns - zupt_rx_ns.load()) * 1e-9;
+    if (age <= zupt_timeout) return true;
+    warn_zupt_stale(now_ns, age);
+    return false;
+}
 
 void SigHandle(int sig) {
     flg_exit = true;
