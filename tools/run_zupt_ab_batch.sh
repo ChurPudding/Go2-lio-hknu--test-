@@ -1,13 +1,14 @@
 #!/usr/bin/env bash
 # =============================================================================
-# run_zupt_ab_batch.sh  —  in-filter ZUPT A/B 캡처 (12런 무인 실행)
+# run_zupt_ab_batch.sh  —  in-filter A/B 캡처 (12런 무인 실행)
 # -----------------------------------------------------------------------------
 #   대상 : lio_test_bag_loop_run1 / run2  ×  {off, on}  ×  3회  = 12 런
-#   방식 : zvd 는 두 조건 모두 ON, yaml zupt_en 만 토글 (단일변수 A/B).
+#   방식 : zvd 는 두 조건 모두 ON, AB_KEY(zupt_ab_env.sh, 기본 leg_en) 하나만 토글 (단일변수 A/B).
+#          값은 launch 인자(<키>:=true|false)로 넘기고 go2_fix.yaml 은 고치지 않는다.
 #          time_sync = false (정식 조건). 재생 offset 25 · 0.5배속 (run1/run2 표준).
-#   출력 : ~/data/bags/plout_run{1,2}_{off,on}_r{1..3}
-#   로그 : ~/data/zupt_ab_logs/*.log
-#   집계 : 끝난 뒤 ./zupt_ab_summarize.sh 로 지표 평균±표준편차 산출.
+#   출력 : ~/data/bags/ab_<키>/plout_run{1,2}_{off,on}_r{1..3}
+#   로그 : ~/data/zupt_ab_logs/<키>/*.log
+#   집계 : 끝난 뒤 ./zupt_ab_summarize.sh 로 지표 평균±표준편차 산출 (같은 AB_KEY 로).
 #
 #   먼저 검증 : ./run_zupt_ab_batch.sh --test   (run1 off·on 각 1회, ~30분)
 #              수동 결과와 PL 샘플 수·정지창 거동이 맞는지 확인 후 전체 실행.
@@ -18,12 +19,10 @@ set -u
 
 # ---- 경로 (로봇 PC에 맞는지 확인) -------------------------------------------
 CATKIN=~/catkin_point_lio_unilidar/src/point_lio_ros2
-CFG="$CATKIN/config/go2_fix.yaml"
 ZVD="$CATKIN/scripts/zvd_node.py"
 IMUFIX=~/fastlio_ws/tools/l1_imu_fix.py
-BAGDIR=~/data/bags
-LOGDIR=~/data/zupt_ab_logs
-mkdir -p "$LOGDIR"
+source "$(dirname "$(readlink -f "$0")")/zupt_ab_env.sh"   # AB_KEY · BAGDIR · OUTDIR · LOGDIR
+mkdir -p "$OUTDIR" "$LOGDIR"
 
 # ---- 실험 매트릭스 ----------------------------------------------------------
 BAGS=("lio_test_bag_loop_run1" "lio_test_bag_loop_run2")
@@ -72,24 +71,22 @@ teardown() {
 }
 trap 'echo; echo "[중단] 정리 중..."; teardown; exit 130' INT TERM
 
-# ---- yaml zupt_en 토글 (검증 실패 시 중단) ---------------------------------
-set_zupt() {   # $1 = on|off
-  local want="$1"
-  if [ "$want" = "on" ]; then sed -i 's/zupt_en: false/zupt_en: true/' "$CFG"
-  else                        sed -i 's/zupt_en: true/zupt_en: false/' "$CFG"; fi
-  local cur; cur=$(grep -oE 'zupt_en:[[:space:]]*(true|false)' "$CFG" | head -1)
-  echo "  cfg: $cur"
-  case "$want:$cur" in
-    on:*true|off:*false) : ;;
-    *) echo "  X zupt_en 설정 실패 ($want 원했으나 '$cur') - 중단."; teardown; exit 1 ;;
+# ---- AB_KEY 값 : 조건 → launch 인자, 노드에 들어갔는지 확인 (실패 시 중단) --
+cond_val() { [ "$1" = "on" ] && echo true || echo false; }   # $1 = on|off
+check_param() {   # $1 = true|false
+  local got; got=$(ros2 param get /laserMapping "$AB_KEY" 2>/dev/null)   # "Boolean value is: True"
+  echo "  param: $AB_KEY = ${got:-없음}"
+  case "${got,,}" in
+    *"is: $1") : ;;
+    *) echo "  X $AB_KEY 설정 실패 ($1 원했으나 '${got:-없음}') - 중단."; teardown; exit 1 ;;
   esac
 }
 
 # ---- 한 런 -----------------------------------------------------------------
 run_one() {   # $1=short(run1/run2) $2=bag $3=cond $4=rep
   local short="$1" bag="$2" cond="$3" r="$4"
-  local tag="${short}_${cond}_r${r}"
-  local out="$BAGDIR/plout_${tag}" log="$LOGDIR/pl_${tag}.log"
+  local tag="${short}_${cond}_r${r}" val; val=$(cond_val "$cond")
+  local out="$OUTDIR/plout_${tag}" log="$LOGDIR/pl_${tag}.log"
 
   if [ -f "$out/metadata.yaml" ]; then echo "  [skip] 완료본 존재: $out"; return 0; fi
   rm -rf "$out"                                # 미완/잔여 제거 후 재캡처
@@ -97,8 +94,9 @@ run_one() {   # $1=short(run1/run2) $2=bag $3=cond $4=rep
   PIDS=(); REC_PID=""
   setsid python3 "$ZVD"                                   >"$LOGDIR/zvd_${tag}.log" 2>&1 & PIDS+=($!)
   setsid python3 "$IMUFIX" --ros-args -p time_sync:=false >"$LOGDIR/imu_${tag}.log" 2>&1 & PIDS+=($!)
-  setsid ros2 launch point_lio mapping_go2_fix.launch.py rviz:=false >"$log" 2>&1 & PIDS+=($!)
+  setsid ros2 launch point_lio mapping_go2_fix.launch.py rviz:=false "${AB_KEY}:=${val}" >"$log" 2>&1 & PIDS+=($!)
   sleep "$INIT_WAIT"
+  check_param "$val"
 
   setsid ros2 bag record -o "$out" \
       /aft_mapped_to_init /utlidar/robot_odom /zupt_active >"$LOGDIR/rec_${tag}.log" 2>&1 & REC_PID=$!
@@ -116,8 +114,11 @@ run_one() {   # $1=short(run1/run2) $2=bag $3=cond $4=rep
   fi
 }
 
-# ---- 사전 점검 : bag·필수 토픽 ---------------------------------------------
+# ---- 사전 점검 : 토글 키·bag·필수 토픽 --------------------------------------
 echo "### 사전 점검 ###"
+ros2 launch point_lio mapping_go2_fix.launch.py --show-args 2>/dev/null | grep -q "'$AB_KEY':" \
+  || { echo "!! mapping_go2_fix.launch.py 에 $AB_KEY 인자 없음 (AB_KEY 확인)"; exit 1; }
+echo "  OK: 토글 키 $AB_KEY"
 for bag in "${BAGS[@]}"; do
   [ -e "$BAGDIR/$bag" ] || { echo "!! bag 없음: $BAGDIR/$bag"; exit 1; }
   info="$(ros2 bag info "$BAGDIR/$bag" 2>/dev/null)"
@@ -137,7 +138,6 @@ echo "총 $TOTAL 런 시작 ($(date '+%F %H:%M:%S'))"
 for bag in "${BAGS[@]}"; do
   short=${bag#lio_test_bag_loop_}
   for cond in "${CONDS[@]}"; do
-    set_zupt "$cond"                          # (bag,cond) 블록당 1회 토글
     for r in $(seq 1 "$REPS"); do
       N=$((N+1))
       echo "==================================================="
@@ -148,9 +148,8 @@ for bag in "${BAGS[@]}"; do
   done
 done
 
-sed -i 's/zupt_en: true/zupt_en: false/' "$CFG"   # config 원복(off)
 MIN=$(( ($(date +%s)-START)/60 ))
 echo "==================================================="
-echo "완료: $TOTAL 런, ${MIN}분. config zupt_en=off 원복."
-echo "출력: $BAGDIR/plout_run{1,2}_{off,on}_r{1..3}"
-echo "다음: ./zupt_ab_summarize.sh 로 지표 집계"
+echo "완료: $TOTAL 런, ${MIN}분. 토글 키 $AB_KEY (go2_fix.yaml 은 그대로)."
+echo "출력: $OUTDIR/plout_run{1,2}_{off,on}_r{1..3}"
+echo "다음: AB_KEY=$AB_KEY ./zupt_ab_summarize.sh 로 지표 집계"

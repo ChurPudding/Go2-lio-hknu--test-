@@ -6,10 +6,10 @@
 #   마지막에 (bag,cond) 조합별 평균±표준편차 표 출력.
 #   ※ 캡처와 분리 → 측정 다시 안 하고 언제든 재실행 가능.
 #   yaw_compare.py 위치가 다르면 : YAWCMP=/경로/yaw_compare.py ./zupt_ab_summarize.sh
+#   대상 폴더는 zupt_ab_env.sh 의 AB_KEY 로 정한다 (run_zupt_ab_batch.sh 와 같은 값으로).
 # =============================================================================
 set -u
-BAGDIR=~/data/bags
-LOGDIR=~/data/zupt_ab_logs
+source "$(dirname "$(readlink -f "$0")")/zupt_ab_env.sh"   # AB_KEY · OUTDIR · LOGDIR
 YAWCMP="${YAWCMP:-$HOME/fastlio_ws/analysis/yaw_compare.py}"   # 없으면 아래에서 안내 후 중단
 CSV="$LOGDIR/summary.csv"
 mkdir -p "$LOGDIR"
@@ -27,7 +27,7 @@ unset CYCLONEDDS_URI; export ROS_DOMAIN_ID=99
 last_deg() { grep -oE '[-+−0-9.]+°' | tail -1 | tr -d '°' | tr '−' '-'; }
 
 echo "tag,max_div_deg,loopA_dev_deg,loopB_dev_deg" > "$CSV"
-for out in "$BAGDIR"/plout_run{1,2}_{off,on}_r{1,2,3}; do
+for out in "$OUTDIR"/plout_run{1,2}_{off,on}_r{1,2,3}; do
   [ -d "$out" ] || { echo "  (없음) $(basename "$out")"; continue; }
   tag=$(basename "$out" | sed 's/^plout_//')
   rep=$(python3 "$YAWCMP" "$out" --out "$LOGDIR/yaw_${tag}.png" 2>/dev/null)
