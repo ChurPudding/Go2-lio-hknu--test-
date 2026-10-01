@@ -20,7 +20,7 @@ bool leg_vel_only = false;
 double leg_delay = 0.0;
 bool zupt_en=true, zupt_vel_en=true, zupt_omg_en=true;
 double zupt_cov_vel=0.01, zupt_cov_omg=0.0001;
-double zupt_timeout=0.5;
+double zupt_timeout=1.0;
 std::string zupt_flag_topic="/zupt_active";
 bool prop_at_freq_of_imu, check_satu, con_frame, cut_frame;
 bool use_imu_as_input, space_down_sample, publish_odometry_without_downsample;
