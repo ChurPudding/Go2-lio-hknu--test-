@@ -726,6 +726,11 @@ int main(int argc, char **argv) {
     rclcpp::init(argc, argv);
     auto nh = std::make_shared<rclcpp::Node>("laserMapping");
     readParameters(nh);
+    if (use_imu_as_input && (zupt_en || leg_en)) {   // ZUPT·다리 융합은 use_imu_as_input=false 분기에만 있음
+        RCLCPP_FATAL(nh->get_logger(), "use_imu_as_input=true with zupt_en=%d leg_en=%d: ZUPT/leg fusion only run when use_imu_as_input=false", zupt_en, leg_en);
+        rclcpp::shutdown();
+        return 1;
+    }
     if (leg_R_ib.size() == 9) leg_Rib = Eigen::Map<const Eigen::Matrix<double,3,3,Eigen::RowMajor>>(leg_R_ib.data());
     else RCLCPP_ERROR(nh->get_logger(), "leg_R_ib needs 9 values (got %zu) - using identity", leg_R_ib.size());
     RCLCPP_INFO(nh->get_logger(), "leg_R_ib[0,0] = %+.6f (expect +0.523029)", leg_Rib(0,0));
